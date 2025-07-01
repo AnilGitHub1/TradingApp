@@ -44,5 +44,28 @@ namespace TradingApp.API.Controller
 
             return Ok(response);
         }
+
+        [HttpGet]
+        public async Task<ActionResult<IList<DailyTFData>>> GetDailyTFDataByToken([FromQuery] int token, int limit = 20)
+        {
+            var data = await _dailyTFRepository.GetDailyTFDataByTokenAsync(token, limit);
+
+            if (data == null)
+                return NotFound("No daily time frame data found.");
+
+            var response = data.Select(d => new
+            {
+                d.id,
+                d.token,
+                d.time,
+                d.open,
+                d.high,
+                d.low,
+                d.close,
+                d.volume
+            }).ToList();
+
+            return Ok(response);
+        }
     }
 }

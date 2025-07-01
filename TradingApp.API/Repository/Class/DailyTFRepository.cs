@@ -26,9 +26,13 @@ namespace TradingApp.API.Repository.Class
                 .ToListAsync();
         }
 
-        public async Task<DailyTFData> GetDailyTFDataByIdAsync(int id)
+        public async Task<IList<DailyTFData>> GetDailyTFDataByTokenAsync(int token, int limit)
         {
-            return await _context.DailyTFData.FindAsync(id);
+            return await _context.DailyTFData
+                .Where(d => d.token == token)
+                .OrderByDescending(d => d.time) 
+                .Take(limit)
+                .ToListAsync();
         }
 
         public async Task AddDailyTFDataAsync(DailyTFData dailyTFData)
@@ -45,12 +49,9 @@ namespace TradingApp.API.Repository.Class
 
         public async Task DeleteDailyTFDataAsync(int id)
         {
-            var dailyTFData = await GetDailyTFDataByIdAsync(id);
-            if (dailyTFData != null)
-            {
-                _context.DailyTFData.Remove(dailyTFData);
-                await _context.SaveChangesAsync();
-            }
+            await _context.DailyTFData
+                .Where(d => d.id == id)
+                .ExecuteDeleteAsync();
         }
     }
 }
