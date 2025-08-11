@@ -1,13 +1,12 @@
 using Microsoft.EntityFrameworkCore;
-using TradingApp.API.Data;
-using TradingApp.API.Repository.Class;
-using TradingApp.API.Repository.Interface;
 using Microsoft.OpenApi.Models;
-
+using TradingApp.Infrastructure.Data;
+using TradingApp.Infrastructure.Repositories;
+using TradingApp.Core.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<MyDbContext>(options =>
+builder.Services.AddDbContext<TradingDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddSwaggerGen(c =>

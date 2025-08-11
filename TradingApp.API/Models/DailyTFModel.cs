@@ -1,8 +1,7 @@
-namespace TradingApp.API.Models;
+﻿namespace TradingApp.API.Models;
 
-public class ResponseDailyTFData
+public class DailyTFModel
 {
-    public int? id { get; set; }
 
     public int? token { get; set; }
 

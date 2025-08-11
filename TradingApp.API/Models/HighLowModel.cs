@@ -1,10 +1,10 @@
 ﻿namespace TradingApp.API.Models;
 
-public class DailyTFData
+public class HighLowModel
 {
-    public int? id { get; set; }
-
     public int? token { get; set; }
+
+    public int? index { get; set; }
 
     public DateTime? time { get; set; }
 
@@ -17,4 +17,8 @@ public class DailyTFData
     public double? close { get; set; }
 
     public int? volume { get; set; }
+
+    public string? hl { get; set; }
+
+    public string? tf { get; set; }
 }
