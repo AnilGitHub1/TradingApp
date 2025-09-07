@@ -2,7 +2,6 @@ namespace TradingApp.Core.DTOs
 {
     public class TrendlineDto
     {
-        public int Id { get; set; }
         public int Token { get; set; }
 
         public DateTime StartTime { get; set; }

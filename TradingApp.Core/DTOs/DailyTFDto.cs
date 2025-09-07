@@ -2,7 +2,6 @@ namespace TradingApp.Core.DTOs
 {
     public class DailyTFDto
     {
-        public int id { get; set; }
         public int token { get; set; }
         public DateTime time { get; set; }
         public double open { get; set; }

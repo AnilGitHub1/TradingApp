@@ -1,2 +1,4 @@
 bin/
 obj/
+# Ignore local development config
+appsettings.Development.json
