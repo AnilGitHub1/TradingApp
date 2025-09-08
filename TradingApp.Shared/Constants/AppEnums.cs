@@ -11,5 +11,19 @@ namespace TradingApp.Shared.Constants
     High,
     Low
   }
+
+  public enum TimeFrame
+  {
+    FifteenMinute,
+    ThirtyMinute,
+    OneHour,
+    TwoHour,
+    FourHour,
+    Day,
+    Week,
+    Month,
+  }
+
+
   
 }

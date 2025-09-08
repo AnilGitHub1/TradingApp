@@ -5,6 +5,8 @@ using TradingApp.Core.Interfaces;
 using TradingApp.Shared.Services;
 using Microsoft.Extensions.DependencyInjection;
 using TradingApp.Shared.ExternalApis;
+using TradingApp.Shared.Options;
+using TradingApp.Shared.Constants;
 
 namespace TradingApp.Processor.Workers
 {
@@ -13,15 +15,18 @@ namespace TradingApp.Processor.Workers
         private readonly ILogger<MarketCloseWorker> _logger;
         private readonly IServiceProvider _sp;
         private readonly IAppLogger<MarketCloseWorker> _alogger;
+    private readonly BackgroundOptions _cfg;
 
         public MarketCloseWorker(ILogger<MarketCloseWorker> logger,
-                                 IServiceProvider sp,
-                                 IAppLogger<MarketCloseWorker> alogger)
-        {
-            _logger = logger;
-            _sp = sp;
-            _alogger = alogger;
-        }
+                             IServiceProvider sp,
+                             IAppLogger<MarketCloseWorker> alogger,
+                             RunConfig config)
+    {
+      _cfg = config.BackgroundOptions;
+      _logger = logger;
+      _sp = sp;
+      _alogger = alogger;
+    }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -30,7 +35,7 @@ namespace TradingApp.Processor.Workers
             while (!stoppingToken.IsCancellationRequested)
             {
                 var now = DateTime.Now;
-                var nextRun = new DateTime(now.Year, now.Month, now.Day, _opts.DailyHour, _opts.DailyMinute, 0);
+                var nextRun = new DateTime(now.Year, now.Month, now.Day, _cfg.StartTime.Hours, _cfg.StartTime.Minutes, 0);
                 if (nextRun <= now) nextRun = nextRun.AddDays(1);
 
                 var delay = nextRun - now;
@@ -60,18 +65,8 @@ namespace TradingApp.Processor.Workers
 
             List<string> symbols;
             string timeframe;
-
-            if (cfg.TestMode.Enabled && !string.IsNullOrWhiteSpace(cfg.TestMode.Symbol))
-            {
-                symbols = new List<string> { cfg.TestMode.Symbol! };
-                timeframe = cfg.TestMode.TimeFrame ?? "1D";
-                _logger.LogInformation("Test mode enabled: running symbol {symbol} timeframe {tf}", cfg.TestMode.Symbol, timeframe);
-            }
-            else
-            {
-                symbols = fetch.GetSymbolsToProcess();
-                timeframe = "1D"; // or read from config
-            }
+            symbols = AppConstants.AllTokens.Keys.ToList();
+            timeframe = "1D"; 
 
             var providerName = (scope.ServiceProvider.GetRequiredService<IConfiguration>()["ExternalApi:DefaultProvider"] ?? "Alpha");
 
@@ -82,16 +77,16 @@ namespace TradingApp.Processor.Workers
 
                 // Choose provider per config or per-symbol if you want
                 var factory = scope.ServiceProvider.GetRequiredService<IMarketApiFactory>();
-                var client = factory.Create(providerName);
+                var client = factory.GetClient(providerName);
 
                 var fetched = await client.FetchAsync(s, timeframe, ct);
                 if (fetched != null) allFetched.Add(fetched);
             }
 
-            await proc.PersistDailyTfDataAsync(allFetched, ct);
+            await proc.ExecuteAsync(ct);
 
             // Analyze with limited parallelism
-            var degree = Math.Max(1, cfg.ParallelDegree);
+            var degree = Math.Max(1, 4);
             var throttler = new SemaphoreSlim(degree);
             var tasks = new List<Task>();
             foreach (var fetched in allFetched)
@@ -103,11 +98,11 @@ namespace TradingApp.Processor.Workers
                     {
                         using var innerScope = _sp.CreateScope();
                         var innerAnalysis = innerScope.ServiceProvider.GetRequiredService<AnalysisService>();
-                        await innerAnalysis.AnalyzeAndStoreAsync(fetched, ct);
+                        await innerAnalysis.ExecuteAsync(ct);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Error analyzing symbol {symbol}", fetched.Symbol);
+                        _logger.LogError(ex, "Error analyzing symbol {symbol}","");
                     }
                     finally
                     {

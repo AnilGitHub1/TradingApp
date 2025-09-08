@@ -1,11 +1,12 @@
 using Microsoft.Extensions.Logging;
 using TradingApp.Infrastructure.Data;
 using TradingApp.Core.Contracts;
+using TradingApp.Core.Interfaces;
 
 namespace TradingApp.Shared.Services
 {
 
-    public class AnalysisService
+    public class AnalysisService : IService
     {
         private readonly TradingDbContext _db;
         private readonly ILogger<AnalysisService> _logger;
@@ -16,7 +17,7 @@ namespace TradingApp.Shared.Services
             _logger = logger;
         }
 
-        public async Task ExecuteAsync(FetchResult fetched, CancellationToken ct)
+        public async Task ExecuteAsync(CancellationToken ct)
         {
             // _logger.LogInformation("Analyzing {symbol}", fetched.Symbol);
 

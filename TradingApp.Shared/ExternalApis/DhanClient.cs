@@ -49,7 +49,7 @@ namespace TradingApp.Shared.ExternalApis
     #region Private Helpers
     private async Task<FetchResult?> FetchInternalAsync(List<string> symbols, string timeFrame, DateTime start, DateTime end, CancellationToken ct)
     {
-      var combinedResult = new FetchResult { Candles = new List<Candle>() };
+      var combinedResult = new FetchResult([]);
 
       foreach (var symbol in symbols)
       {

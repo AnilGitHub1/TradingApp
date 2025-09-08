@@ -1,10 +1,11 @@
 using Microsoft.Extensions.Logging;
+using TradingApp.Core.Interfaces;
 using TradingApp.Shared.ExternalApis;
 using TradingApp.Shared.Options;
 
 namespace TradingApp.Shared.Services
 {
-  public class DataFetchService
+  public class DataFetchService : IService
   {
     private readonly IMarketApiFactory _factory;
     private readonly ILogger<DataFetchService> _logger;

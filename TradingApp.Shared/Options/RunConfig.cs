@@ -28,6 +28,7 @@ namespace TradingApp.Shared.Options
   public class FetchServiceConfig : ServiceConfig
   {
     public FetchMode fetchMode = FetchMode.Latest;
+    public TimeFrame timeFrame = TimeFrame.Day;
   }
 
   // Example: Data Processing Service
