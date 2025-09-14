@@ -15,16 +15,15 @@ namespace TradingApp.Shared.Services
     private readonly List<string> _symbols;
     private readonly IMarketApiClient<T> _client;
 
-    public DataFetchService(ICandleRepository<DailyTF> dailyTF,
-    ICandleRepository<FifteenTF> fifteenTF, IMarketApiFactory<T> factory, ILogger<DataFetchService<T>> logger, RunConfig cfg)
+    public DataFetchService(ICandleRepository<T> repo, IMarketApiFactory<T> factory, ILogger<DataFetchService<T>> logger, RunConfig cfg)
     {
       _logger = logger;
       _cfg = cfg.DebugOptions.FetchConfig;
       _symbols = cfg.DebugOptions.Symbols.Count() == 0 ?
       [.. AppConstants.AllTokens.Values] :
       cfg.DebugOptions.Symbols;
-      _client = factory.GetClient(EnumMapper.GetClient(_cfg.client));
-      _repo = GetRepository<T>(_cfg.timeFrame,dailyTF,fifteenTF);
+      _client = factory.GetClient(EnumMapper.GetClient(_cfg.Client));
+      _repo = repo;
     }
     public async Task ExecuteAsync(CancellationToken ct)
     {
@@ -34,7 +33,7 @@ namespace TradingApp.Shared.Services
       }
       else
       {
-        await UpdateLatestCandlesAsync(_cfg.timeFrame, ct);
+        await UpdateLatestCandlesAsync(_cfg.TimeFrame, ct);
       }
     }
     private async Task UpdateLatestCandlesAsync(TimeFrame timeFrame, CancellationToken ct)
@@ -43,7 +42,7 @@ namespace TradingApp.Shared.Services
       var combinedResult = new List<T>();
       foreach (var symbol in _symbols)
       {
-        var start = await GetLatestDateTime(438);
+        var start = await GetLatestDateTime(symbol);
         var result = await _client.FetchAsync(symbol, tf, start, ct);
         if (result == null || result.Candles == null)
         {
@@ -63,20 +62,29 @@ namespace TradingApp.Shared.Services
       await _repo.AddAsync(candles);
     }
 
-    private async Task<DateTime> GetLatestDateTime(int token)
+    private async Task<DateTime> GetLatestDateTime(string symbol)
     {
+      if (!AppConstants.StockLookUP.TryGetValue(symbol, out var tokenString))
+      {
+        _logger.LogWarning("Symbol {symbol} not found in token list.", symbol);
+        return default;
+      } 
+      if (!int.TryParse(tokenString, out var token))
+      {
+        _logger.LogWarning("Token {tokenString} for symbol {symbol} is not a valid integer.", tokenString, symbol);
+        return default;
+      }
       return await _repo.GetLatestDateTimeAsync(token);
     }
-    private ICandleRepository<T> GetRepository<T>(TimeFrame timeFrame,
-    ICandleRepository<DailyTF> dailyTF, ICandleRepository<FifteenTF> fifteenTF)
-        where T : Candle
-    {
-      return timeFrame switch
-      {
-        TimeFrame.Day => (ICandleRepository<T>) dailyTF,
-        TimeFrame.FifteenMinute => (ICandleRepository<T>) fifteenTF,
-        _ => throw new NotSupportedException()
-      };
-    }
+    // private ICandleRepository<T> GetRepository(TimeFrame timeFrame,
+    // ICandleRepository<DailyTF> dailyTF, ICandleRepository<FifteenTF> fifteenTF)
+    // {
+    //   return timeFrame switch
+    //   {
+    //     TimeFrame.Day => (ICandleRepository<T>) dailyTF,
+    //     TimeFrame.FifteenMinute => (ICandleRepository<T>) fifteenTF,
+    //     _ => throw new NotSupportedException()
+    //   };
+    // }
   }
 }

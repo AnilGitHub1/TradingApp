@@ -61,39 +61,43 @@ namespace TradingApp.Shared.Constants
     }
     public static TimeFrame GetTimeFrame(string tf)
     {
+      tf = tf.ToLower();
+      tf = tf.Replace(" ","");
       switch (tf)
       {
         case "15m":
-        case "15M":
+        case "15min":
+        case "fifteenminute":
           return TimeFrame.FifteenMinute;
         case "30m":
-        case "30M":
+        case "30min":
+        case "thirtyminute":
           return TimeFrame.ThirtyMinute;
         case "1h":
-        case "1H":
         case "h":
-        case "H":
+        case "hour":
+        case "onehour":
           return TimeFrame.OneHour;
         case "2h":
-        case "2H":
+        case "twohour":
           return TimeFrame.TwoHour;
         case "4h":
-        case "4H":
+        case "fourhour":
           return TimeFrame.FourHour;
-        case "D":
-        case "1D":
         case "d":
         case "1d":
+        case "day":
+        case "oneday":
           return TimeFrame.Day;
-        case "W":
-        case "1W":
         case "w":
         case "1w":
+        case "week":
+        case "oneweek":
           return TimeFrame.Week;
-        case "M":
-        case "1M":
         case "m":
         case "1m":
+        case "month":
+        case "onemonth":
           return TimeFrame.Month;
         default:
           return TimeFrame.Day;
@@ -101,15 +105,15 @@ namespace TradingApp.Shared.Constants
     }
     public static FetchClient GetClient(string client)
     {
+      client = client.ToLower();
+      client = client.Replace(" ","");
       switch (client)
       {
         case "dhan":
-        case "Dhan":
           return FetchClient.Dhan;
         default:
           return FetchClient.Dhan;
       }
     }
-  }
-  
+  }  
 }

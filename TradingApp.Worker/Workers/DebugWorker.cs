@@ -35,17 +35,17 @@ namespace TradingApp.Processor.Workers
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
 
-      if (_config.FetchConfig.Enabled && _config.FetchConfig.timeFrame == TimeFrame.Day)
+      if (_config.FetchConfig.Enabled && _config.FetchConfig.TimeFrame == TimeFrame.Day)
           await _fetchServiceDaily.ExecuteAsync(ct);
 
-      if (_config.FetchConfig.Enabled && _config.FetchConfig.timeFrame == TimeFrame.FifteenMinute)
+      if (_config.FetchConfig.Enabled && _config.FetchConfig.TimeFrame == TimeFrame.FifteenMinute)
           await _fetchServiceFifteen.ExecuteAsync(ct);
 
-      if (_config.FetchConfig.Enabled)
+      if (_config.ProcessingConfig.Enabled)
           await _processService.ExecuteAsync(ct);
 
-      if (_config.FetchConfig.Enabled)
-          await _processService.ExecuteAsync(ct);      
+      if (_config.AnalysisConfig.Enabled)
+          await _analysisService.ExecuteAsync(ct);
     }
   }
 }

@@ -1,3 +1,4 @@
+using System.Xml.Serialization;
 using TradingApp.Shared.Constants;
 
 namespace TradingApp.Shared.Options
@@ -27,8 +28,25 @@ namespace TradingApp.Shared.Options
   // Example: Fetch Service
   public class FetchServiceConfig : ServiceConfig
   {
-    public FetchClient client = FetchClient.Dhan;
-    public TimeFrame timeFrame = TimeFrame.Day;
+    [XmlIgnore]
+    public FetchClient Client { get; set; } = FetchClient.Dhan;
+
+    [XmlElement("client")]
+    public string ClientString
+    {
+      get => EnumMapper.GetClient(Client);
+      set => Client = EnumMapper.GetClient(value);
+    }
+
+    [XmlIgnore]
+    public TimeFrame TimeFrame { get; set; } = TimeFrame.Day;
+
+    [XmlElement("timeFrame")]
+    public string TimeFrameString
+    {
+      get => EnumMapper.GetTimeFrame(TimeFrame);
+      set => TimeFrame = EnumMapper.GetTimeFrame(value);
+    }
   }
 
   // Example: Data Processing Service
