@@ -8,19 +8,22 @@ using TradingApp.Core.DTOs;
 
 namespace TradingApp.Infrastructure.Repositories
 {
-  public class DailyTFRepository : Repository<DailyTF>, IDailyTFRepository
+  public class CandleRepository<T> : Repository<T>, ICandleRepository<T> where T : Candle
   {
-
-    public DailyTFRepository(TradingDbContext context) : base(context)
+    protected readonly TradingDbContext _context;
+    protected readonly DbSet<T> _dbSet;
+    public CandleRepository(TradingDbContext context) : base(context)
     {
+      _context = context;
+      _dbSet = context.Set<T>();
     }
 
-    public async Task<IList<DailyTF>> GetDailyTFAsync(int token, int page, int pageSize)
+    public async Task<IList<T>> GetAsync(int token, int page, int pageSize)
     {
       if (page <= 0 || pageSize <= 0)
         throw new ArgumentException("Page and pageSize must be greater than 0.");
 
-      return await Context.DailyTF
+      return await _dbSet
           .Where(d => d.token == token)
           .OrderByDescending(d => d.time)
           .Skip((page - 1) * pageSize)
@@ -28,98 +31,92 @@ namespace TradingApp.Infrastructure.Repositories
           .ToListAsync();
     }
 
-    public async Task<IList<DailyTF>> GetDailyTFAsync(int token, int limit)
+    public async Task<IList<T>> GetAsync(int token, int limit)
     {
-      return await Context.DailyTF
+      return await _dbSet
           .Where(d => d.token == token)
           .OrderByDescending(d => d.time)
           .Take(limit)
           .ToListAsync();
     }
 
-    public async Task<IList<DailyTF>> GetAllDailyTFAsync(int token)
+    public async Task<IList<T>> GetAllAsync(int token)
     {
-      return await Context.DailyTF
+      return await _dbSet
           .AsNoTracking()
           .Where(x => x.token == token)
           .OrderBy(x => x.time)
           .ToListAsync();
     }
 
-    public async Task<IList<DailyTF>> GetAllDailyTFAsync(int token, DateTime from)
+    public async Task<IList<T>> GetAllAsync(int token, DateTime from)
     {
-      return await Context.DailyTF
+      return await _dbSet
           .AsNoTracking()
           .Where(x => x.token == token && x.time >= from)
           .OrderBy(x => x.time)
           .ToListAsync();
     }
 
-    public async Task<IList<DailyTF>> GetAllDailyTFAsync(int token, DateTime from, DateTime to)
+    public async Task<IList<T>> GetAllAsync(int token, DateTime from, DateTime to)
     {
-      return await Context.DailyTF
+      return await _dbSet
           .AsNoTracking()
           .Where(x => x.token == token && x.time >= from && x.time <= to)
           .OrderBy(x => x.time)
           .ToListAsync();
     }
 
-    public async Task AddDailyTFAsync(DailyTF DailyTF)
+    public async Task AddAsync(IList<T> candles)
     {
-      await Context.DailyTF.AddAsync(DailyTF);
-      await Context.SaveChangesAsync();
-    }
+      if (candles == null || !candles.Any()) return;
 
-    public async Task AddDailyTFAsync(IList<DailyTF> entities)
-    {
-      if (entities == null || !entities.Any()) return;
-
-      if (entities.Count() <= SmallMediumBatchThreshold)
+      if (candles.Count() <= SmallMediumBatchThreshold)
       {
-        await Context.DailyTF.AddRangeAsync(entities);
+        await _dbSet.AddRangeAsync(candles);
         await Context.SaveChangesAsync();
       }
       else
       {
         // Switch to bulk insert (library or raw SQL)
-        await Context.BulkInsertAsync(entities);
+        await Context.BulkInsertAsync(candles);
       }
     }
 
-    public async Task UpdateDailyTFAsync(DailyTF DailyTF)
+    public async Task UpdateAsync(T entity)
     {
-      Context.DailyTF.Update(DailyTF);
+      _dbSet.Update(entity);
       await Context.SaveChangesAsync();
     }
 
-    public async Task DeleteDailyTFAsync(int id)
+    public async Task DeleteAsync(int id)
     {
-      await Context.DailyTF
+      await _dbSet
       .Where(d => d.id == id)
       .ExecuteDeleteAsync();
     }
 
-    public async Task DeleteDailyTFAsync(DailyTF entity)
+    public async Task DeleteAsync(T entity)
     {
       if (entity != null)
       {
-        await Context.DailyTF
+        await _dbSet
         .Where(d => d.id == entity.id)
         .ExecuteDeleteAsync();
       }
     }
 
-    public async Task<int> DeleteDailyTFDataAsync(int token)
+    public async Task<int> DeleteDataAsync(int token)
     {
       // Raw SQL is MUCH faster than EF RemoveRange for large sets nad bulk operations
       return await Context.Database.ExecuteSqlRawAsync(
-          "DELETE FROM dailytf_data WHERE token = {0} ", token
+          "DELETE FROM _data WHERE token = {0} ", token
       );
     }
 
-    public async Task<DailyTF?> GetLatestCandleAsync(int token)
+    public async Task<T?> GetLatestCandleAsync(int token)
     {
-      return await Context.DailyTF
+      return await _dbSet
         .AsNoTracking()
         .Where(x => x.token == token)
         .OrderByDescending(x => x.time)
@@ -127,7 +124,7 @@ namespace TradingApp.Infrastructure.Repositories
     }
     public async Task<DateTime> GetLatestDateTimeAsync(int token)
     {
-      var latest = await Context.DailyTF
+      var latest = await _dbSet
         .Where(x => x.token == token)
         .OrderByDescending(x => x.time)
         .Select(x => x.time)

@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using TradingApp.Shared.ExternalApis;
 using TradingApp.Shared.Options;
 using TradingApp.Shared.Constants;
+using TradingApp.Core.Entities;
 
 namespace TradingApp.Processor.Workers
 {
@@ -59,7 +60,7 @@ namespace TradingApp.Processor.Workers
         private async Task RunJobOnce(CancellationToken ct)
         {
             using var scope = _sp.CreateScope();
-            var fetch = scope.ServiceProvider.GetRequiredService<DataFetchService>();
+            var fetch = scope.ServiceProvider.GetRequiredService<DataFetchService<DailyTF>>();
             var proc = scope.ServiceProvider.GetRequiredService<DataProcessingService>();
             var analysis = scope.ServiceProvider.GetRequiredService<AnalysisService>();
 
@@ -70,13 +71,13 @@ namespace TradingApp.Processor.Workers
 
             var providerName = (scope.ServiceProvider.GetRequiredService<IConfiguration>()["ExternalApi:DefaultProvider"] ?? "Alpha");
 
-            var allFetched = new List<TradingApp.Core.Contracts.FetchResult>();
+            var allFetched = new List<TradingApp.Core.Contracts.FetchResult<DailyTF>>();
             foreach (var s in symbols)
             {
                 ct.ThrowIfCancellationRequested();
 
                 // Choose provider per config or per-symbol if you want
-                var factory = scope.ServiceProvider.GetRequiredService<IMarketApiFactory>();
+                var factory = scope.ServiceProvider.GetRequiredService<IMarketApiFactory<DailyTF>>();
                 var client = factory.GetClient(providerName);
 
                 var fetched = await client.FetchAsync(s, timeframe, ct);

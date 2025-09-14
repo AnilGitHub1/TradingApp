@@ -27,7 +27,7 @@ namespace TradingApp.Shared.Options
   // Example: Fetch Service
   public class FetchServiceConfig : ServiceConfig
   {
-    public FetchMode fetchMode = FetchMode.Latest;
+    public FetchClient client = FetchClient.Dhan;
     public TimeFrame timeFrame = TimeFrame.Day;
   }
 

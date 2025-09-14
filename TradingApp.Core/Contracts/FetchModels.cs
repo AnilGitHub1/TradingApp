@@ -1,6 +1,6 @@
-using TradingApp.Core.DTOs;
+using TradingApp.Core.Entities;
 
 namespace TradingApp.Core.Contracts
 {
-    public record FetchResult(List<Candle> Candles);
+    public record FetchResult<T>(List<T> Candles) where T : Candle;
 }

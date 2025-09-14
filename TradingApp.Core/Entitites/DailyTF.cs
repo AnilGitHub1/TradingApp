@@ -1,14 +1,10 @@
 namespace TradingApp.Core.Entities
 {
-    public class DailyTF
+  public class DailyTF : Candle
+  {
+    public DailyTF(int token, DateTime time, double open, double high, double low, double close, double volume)
+      : base(token, time, open, high, low, close, volume)
     {
-        public int id { get; set; }
-        public int token { get; set; }
-        public DateTime time { get; set; }
-        public double open { get; set; }
-        public double high { get; set; }
-        public double low { get; set; }
-        public double close { get; set; }
-        public double volume { get; set; }
     }
+  }
 }

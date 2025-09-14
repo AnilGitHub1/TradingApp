@@ -10,11 +10,15 @@ using TradingApp.Shared.Services;
 using TradingApp.Processor.Workers;
 using TradingApp.Shared.Options;
 using TradingApp.Shared.ExternalApis;
+using TradingApp.Core.Entities;
 
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureAppConfiguration((ctx, cfg) =>
     {
-        cfg.SetBasePath(Directory.GetCurrentDirectory());
+        var env = ctx.HostingEnvironment;
+        var basePath = Path.Combine(env.ContentRootPath);  // Ensures root project folder
+        Console.WriteLine(basePath);
+        cfg.SetBasePath(basePath);
         cfg.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
         cfg.AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true);
         cfg.AddEnvironmentVariables();
@@ -79,15 +83,52 @@ static RunConfig LoadRunConfig(string path)
 static void AddHttpClients(IServiceCollection services, IConfiguration config)
 {
     // External API providers and factory
-    services.AddHttpClient<AlphaVantageClient>(client =>
+    services.AddHttpClient<AlphaVantageClient<DailyTF>>(client =>
     {
         client.BaseAddress = new Uri(
             config["ExternalApi:AlphaBaseUrl"] 
             ?? config["ExternalApi:BaseUrl"] 
             ?? "https://api.example.com/");
     });
+    services.AddHttpClient<AlphaVantageClient<FifteenTF>>(client =>
+    {
+        client.BaseAddress = new Uri(
+            config["ExternalApi:AlphaBaseUrl"] 
+            ?? config["ExternalApi:BaseUrl"] 
+            ?? "https://api.example.com/");
+    });
+    services.AddHttpClient<DhanClient<DailyTF>>((sp, client) =>
+    {
+        var spConfig = sp.GetRequiredService<IConfiguration>();
+        var section = spConfig.GetSection("DhanMarketDataProvider");
 
-    services.AddHttpClient<DhanClient>((sp, client) =>
+        // Set BaseAddress
+        var baseUrl = section["BaseUrl"] ?? "https://tv-web.dhan.co";
+        client.BaseAddress = new Uri(baseUrl);
+
+        // Add default headers from config
+        var headers = section.GetSection("Headers").GetChildren();
+        foreach (var header in headers)
+        {
+            // Avoid duplicate assignment if header already exists
+            if (!client.DefaultRequestHeaders.Contains(header.Key))
+            {
+                client.DefaultRequestHeaders.Add(header.Key, header.Value);
+            }
+        }
+    })
+    .ConfigurePrimaryHttpMessageHandler(() =>
+    {
+        return new HttpClientHandler
+        {
+            AutomaticDecompression = 
+                System.Net.DecompressionMethods.GZip |
+                System.Net.DecompressionMethods.Deflate |
+                System.Net.DecompressionMethods.Brotli
+        };
+    });
+
+    services.AddHttpClient<DhanClient<FifteenTF>>((sp, client) =>
     {
         var spConfig = sp.GetRequiredService<IConfiguration>();
         var section = spConfig.GetSection("DhanMarketDataProvider");
@@ -122,18 +163,22 @@ static void AddHttpClients(IServiceCollection services, IConfiguration config)
 static void AddSingletons(IServiceCollection services, RunConfig runConfig)
 {
     services.AddSingleton(typeof(IAppLogger<>), typeof(AppLogger<>));
-    services.AddSingleton<IMarketApiFactory, MarketApiFactory>();
+    services.AddSingleton<IMarketApiFactory<DailyTF>, MarketApiFactory<DailyTF>>();
+    services.AddSingleton<IMarketApiFactory<FifteenTF>, MarketApiFactory<FifteenTF>>();
     services.AddSingleton(runConfig);
 }
 
 static void AddTransients(IServiceCollection services) {    
-    services.AddTransient<AlphaVantageClient>();
-    services.AddTransient<DhanClient>();
+    services.AddTransient<AlphaVantageClient<DailyTF>>();
+    services.AddTransient<DhanClient<DailyTF>>(); 
+    services.AddTransient<AlphaVantageClient<FifteenTF>>();
+    services.AddTransient<DhanClient<FifteenTF>>();
 }
 
 static void AddScopes(IServiceCollection services)
 {
-    services.AddScoped<DataFetchService>();
+    services.AddScoped<DataFetchService<DailyTF>>();
+    services.AddScoped<DataFetchService<FifteenTF>>();
     services.AddScoped<DataProcessingService>();
     services.AddScoped<AnalysisService>();
 }
