@@ -12,6 +12,8 @@ using TradingApp.Processor.Workers;
 using TradingApp.Shared.Options;
 using TradingApp.Shared.ExternalApis;
 using TradingApp.Core.Entities;
+using System.Xml.Linq;
+using TradingApp.Shared.Constants;
 
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureAppConfiguration((ctx, cfg) =>
@@ -36,7 +38,7 @@ var host = Host.CreateDefaultBuilder(args)
         .CreateLogger();
       // Load runConfig.xml to decide mode
       RunConfig runConfig = LoadRunConfig(config["PathConfig:InputConfigPath"] ?? "");
-
+      Console.WriteLine($"Running in {runConfig.Mode} mode.");
       // Infrastructure registration (assumes AddInfrastructure exists and registers TradingDbContext)
       services.AddInfrastructure(config.GetConnectionString("DefaultConnection")!,true);
 
@@ -188,4 +190,5 @@ static void AddScopes(IServiceCollection services)
   services.AddScoped<DataFetchService<FifteenTF>>();
   services.AddScoped<DataProcessingService>();
   services.AddScoped<AnalysisService>();
+  services.AddScoped<DatabaseCleanUpService>();
 }

@@ -15,6 +15,7 @@ namespace TradingApp.Processor.Workers
     private readonly DataFetchService<FifteenTF> _fetchServiceFifteen;
     private readonly DataProcessingService _processService;
     private readonly AnalysisService _analysisService;
+    private readonly DatabaseCleanUpService _cleanUpService;
 
     public DebugWorker(
         ILogger<DebugWorker> logger,
@@ -22,7 +23,9 @@ namespace TradingApp.Processor.Workers
         DataFetchService<DailyTF> fetchServiceDaily,
         DataFetchService<FifteenTF> fetchServiceFifteen,
         DataProcessingService processService,
-        AnalysisService analysisService)
+        AnalysisService analysisService,
+        DatabaseCleanUpService cleanUpService
+        )
     {
       _logger = logger;
       _config = config.DebugOptions;
@@ -30,13 +33,18 @@ namespace TradingApp.Processor.Workers
       _fetchServiceFifteen = fetchServiceFifteen;
       _processService = processService;
       _analysisService = analysisService;
+      _cleanUpService = cleanUpService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
+      _logger.LogInformation("DebugWorker running at: {time}", DateTimeOffset.Now);
+      
+      if (_config.CleanUpConfig.Enabled)
+        await _cleanUpService.ExecuteAsync(ct);
 
       if (_config.FetchConfig.Enabled && _config.FetchConfig.TimeFrame == TimeFrame.Day)
-          await _fetchServiceDaily.ExecuteAsync(ct);
+        await _fetchServiceDaily.ExecuteAsync(ct);
 
       if (_config.FetchConfig.Enabled && _config.FetchConfig.TimeFrame == TimeFrame.FifteenMinute)
           await _fetchServiceFifteen.ExecuteAsync(ct);

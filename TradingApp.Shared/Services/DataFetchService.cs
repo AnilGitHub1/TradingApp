@@ -49,8 +49,12 @@ namespace TradingApp.Shared.Services
           continue;
         }
         var candles = result.Candles;
-        if (start == default)
-          await Insert(candles);
+        if (combinedResult.Count + candles.Count > 10000)
+        {
+          await Insert(combinedResult);
+          combinedResult.Clear();
+          combinedResult.AddRange(candles);
+        }
         else
           combinedResult.AddRange(candles);
       }

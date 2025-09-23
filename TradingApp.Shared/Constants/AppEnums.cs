@@ -23,6 +23,16 @@ namespace TradingApp.Shared.Constants
     Month,
   }
 
+  public enum Table
+  {
+    DailyTF,
+    FifteenTF,
+    TrendLine,
+    HighLow,
+    Trade,
+    Simulation
+  }
+
   public static class EnumMapper
   {
     public static string GetTimeFrame(TimeFrame tf)
@@ -62,7 +72,7 @@ namespace TradingApp.Shared.Constants
     public static TimeFrame GetTimeFrame(string tf)
     {
       tf = tf.ToLower();
-      tf = tf.Replace(" ","");
+      tf = tf.Replace(" ", "");
       switch (tf)
       {
         case "15m":
@@ -106,13 +116,55 @@ namespace TradingApp.Shared.Constants
     public static FetchClient GetClient(string client)
     {
       client = client.ToLower();
-      client = client.Replace(" ","");
+      client = client.Replace(" ", "");
       switch (client)
       {
         case "dhan":
           return FetchClient.Dhan;
         default:
           return FetchClient.Dhan;
+      }
+    }
+    public static string GetTable(Table table)
+    {
+      switch (table)
+      {
+        case Table.DailyTF:
+          return "dailytf_data";
+        case Table.FifteenTF:
+          return "fifteentf_data";
+        case Table.TrendLine:
+          return "trendline_data";
+        case Table.HighLow:
+          return "highlow_data";
+        case Table.Trade:
+          return "trade_data";
+        case Table.Simulation:
+          return "simulation_data";
+        default:
+          return "dailytf_data";
+      }
+    }
+    public static Table GetTable(string table)
+    {
+      table = table.ToLower();
+      table = table.Replace(" ", "");
+      switch (table)
+      {
+        case "dailytf_data":
+          return Table.DailyTF;
+        case "fifteentf_data":
+          return Table.FifteenTF;
+        case "trendline_data":
+          return Table.TrendLine;
+        case "highlow_data":
+          return Table.HighLow;
+        case "trade_data":
+          return Table.Trade;
+        case "simulation_data":
+          return Table.Simulation;
+        default:
+          return Table.DailyTF;
       }
     }
   }  

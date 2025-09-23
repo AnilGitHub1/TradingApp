@@ -15,6 +15,7 @@ namespace TradingApp.Shared.Options
     public FetchServiceConfig FetchConfig{ get; set; } = new();
     public DataProcessingServiceConfig ProcessingConfig{ get; set; } = new();
     public AnalysisServiceConfig AnalysisConfig{ get; set; } = new();
+    public DatabaseCleanUpServiceConfig CleanUpConfig{ get; set; } = new();
     public List<string> Symbols { get; set; } = new();
   }
 
@@ -61,6 +62,43 @@ namespace TradingApp.Shared.Options
   {
     public string StrategyName { get; set; } = "DefaultStrategy";
     public double RiskThreshold { get; set; } = 0.05;
+  }
+
+  public class DatabaseCleanUpServiceConfig : ServiceConfig
+  {
+    [XmlIgnore]
+    public List<Table> TablesToClean { get; set; } = new();
+
+    [XmlArray("Tables")]
+    [XmlArrayItem("Table")]
+    public string[] TableStrings
+    {
+      get => TablesToClean.Select(EnumMapper.GetTable).ToArray();
+      set
+      {
+        Console.WriteLine($"TableStrings.setter called; value is {(value == null ? "null" : $"{value.Length} items")}");
+        if (value != null)
+        {
+            for (int i = 0; i < value.Length; i++)
+                Console.WriteLine($"  [{i}]='{value[i]}'");
+        }
+
+        if (value == null)
+        {
+            TablesToClean = new List<Table>();
+            return;
+        }
+
+        var list = new List<Table>();
+        foreach (var s in value)
+        {
+            if (string.IsNullOrWhiteSpace(s)) continue;
+            list.Add(EnumMapper.GetTable(s)); // assume GetTable(string) now strips _data
+        }
+
+        TablesToClean = list;
+      }
+    }
   }
 
   public class BackgroundOptions

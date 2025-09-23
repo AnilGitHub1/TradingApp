@@ -23,7 +23,7 @@ namespace TradingApp.Infrastructure.Data
 
             modelBuilder.Entity<FifteenTF>(entity =>
             {
-                entity.ToTable("Fifteentf_data");
+                entity.ToTable("fifteentf_data");
                 entity.HasKey(e => e.id);
                 entity.Property(e => e.time)
                   .HasColumnType("timestamp without time zone");

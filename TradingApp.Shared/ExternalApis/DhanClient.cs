@@ -55,6 +55,17 @@ namespace TradingApp.Shared.ExternalApis
         {
           // var token = AppConstants.AllTokens[symbol];
           SetPayload(symbol, start, timeFrame);
+          int token;
+          if (!AppConstants.StockLookUP.TryGetValue(symbol, out var tokenValue))
+          {
+            _logger.LogWarning("Symbol {Symbol} not found in token lookup.", symbol);
+            continue;
+          }
+          if (!int.TryParse(tokenValue, out token))
+          {
+            _logger.LogWarning("Token {TokenValue} for symbol {Symbol} is not a valid integer.", tokenValue, symbol);
+            continue;
+          }
           var response = await _http.PostAsJsonAsync(_url, _payLoad, ct);
 
           if (!response.IsSuccessStatusCode)
@@ -66,7 +77,7 @@ namespace TradingApp.Shared.ExternalApis
           var candles = new List<T>();
           if (apiResponse != null)
           {
-            candles = LoadCandles(apiResponse, 438);
+            candles = LoadCandles(apiResponse, token);
           }
 
           combinedResult.Candles.AddRange(candles);
