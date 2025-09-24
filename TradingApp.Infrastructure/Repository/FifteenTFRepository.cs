@@ -8,14 +8,14 @@ using TradingApp.Core.DTOs;
 
 namespace TradingApp.Infrastructure.Repositories
 {
-  public class FifteenTFRepository : Repository<FifteenTF>, IFifteenTFRepository
+  public class FifteenTFRepository : Repository<Candle>, IFifteenTFRepository
   {
 
     public FifteenTFRepository(TradingDbContext context) : base(context)
     {
     }
 
-    public async Task<IList<FifteenTF>> GetFifteenTFAsync(int token, int page, int pageSize)
+    public async Task<IList<Candle>> GetFifteenTFAsync(int token, int page, int pageSize)
     {
       if (page <= 0 || pageSize <= 0)
         throw new ArgumentException("Page and pageSize must be greater than 0.");
@@ -28,7 +28,7 @@ namespace TradingApp.Infrastructure.Repositories
           .ToListAsync();
     }
 
-    public async Task<IList<FifteenTF>> GetFifteenTFAsync(int token, int limit)
+    public async Task<IList<Candle>> GetFifteenTFAsync(int token, int limit)
     {
       return await Context.FifteenTF
           .Where(d => d.token == token)
@@ -37,7 +37,7 @@ namespace TradingApp.Infrastructure.Repositories
           .ToListAsync();
     }
 
-    public async Task<IList<FifteenTF>> GetAllFifteenTFAsync(int token)
+    public async Task<IList<Candle>> GetAllFifteenTFAsync(int token)
     {
       return await Context.FifteenTF
           .AsNoTracking()
@@ -46,7 +46,7 @@ namespace TradingApp.Infrastructure.Repositories
           .ToListAsync();
     }
 
-    public async Task<IList<FifteenTF>> GetAllFifteenTFAsync(int token, DateTime from)
+    public async Task<IList<Candle>> GetAllFifteenTFAsync(int token, DateTime from)
     {
       return await Context.FifteenTF
           .AsNoTracking()
@@ -55,7 +55,7 @@ namespace TradingApp.Infrastructure.Repositories
           .ToListAsync();
     }
 
-    public async Task<IList<FifteenTF>> GetAllFifteenTFAsync(int token, DateTime from, DateTime to)
+    public async Task<IList<Candle>> GetAllFifteenTFAsync(int token, DateTime from, DateTime to)
     {
       return await Context.FifteenTF
           .AsNoTracking()
@@ -64,13 +64,13 @@ namespace TradingApp.Infrastructure.Repositories
           .ToListAsync();
     }
 
-    public async Task AddFifteenTFAsync(FifteenTF FifteenTF)
+    public async Task AddFifteenTFAsync(Candle Candle)
     {
-      await Context.FifteenTF.AddAsync(FifteenTF);
+      await Context.FifteenTF.AddAsync(Candle);
       await Context.SaveChangesAsync();
     }
 
-    public async Task AddFifteenTFAsync(IList<FifteenTF> entities)
+    public async Task AddFifteenTFAsync(IList<Candle> entities)
     {
       if (entities == null || !entities.Any()) return;
 
@@ -85,9 +85,9 @@ namespace TradingApp.Infrastructure.Repositories
         await Context.BulkInsertAsync(entities);
       }
     }
-    public async Task UpdateFifteenTFAsync(FifteenTF FifteenTF)
+    public async Task UpdateFifteenTFAsync(Candle Candle)
     {
-      Context.FifteenTF.Update(FifteenTF);
+      Context.FifteenTF.Update(Candle);
       await Context.SaveChangesAsync();
     }
 
@@ -98,7 +98,7 @@ namespace TradingApp.Infrastructure.Repositories
       .ExecuteDeleteAsync();
     }
 
-    public async Task DeleteFifteenTFAsync(FifteenTF entity)
+    public async Task DeleteFifteenTFAsync(Candle entity)
     {
       if (entity != null)
       {
@@ -116,7 +116,7 @@ namespace TradingApp.Infrastructure.Repositories
       );
     }
 
-    public async Task<FifteenTF?> GetLatestCandleAsync(int token)
+    public async Task<Candle?> GetLatestCandleAsync(int token)
     {
       return await Context.FifteenTF
           .AsNoTracking()

@@ -13,16 +13,12 @@ namespace TradingApp.Infrastructure
     {
       services.AddDbContext<TradingDbContext>(options =>
           options.UseNpgsql(connectionString));
-
       if (addGenericCandleRepository)
       {
         services.AddScoped(typeof(ICandleRepository<>), typeof(CandleRepository<>));
       }
-      else
-      {
-        services.AddScoped<IDailyTFRepository, DailyTFRepository>();
-        services.AddScoped<IFifteenTFRepository, FifteenTFRepository>();
-      }
+      services.AddScoped<IDailyTFRepository, DailyTFRepository>();
+      services.AddScoped<IFifteenTFRepository, FifteenTFRepository>();
       services.AddScoped<IHighLowRepository, HighLowRepository>();
       services.AddScoped<ITrendlineRepository, TrendlineRepository>();
 

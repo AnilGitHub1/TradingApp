@@ -13,14 +13,14 @@ namespace TradingApp.Shared.Constants
 
   public enum TimeFrame
   {
-    FifteenMinute,
-    ThirtyMinute,
-    OneHour,
-    TwoHour,
-    FourHour,
-    Day,
-    Week,
-    Month,
+    FifteenMinute = 0,
+    ThirtyMinute = 1,
+    OneHour = 2,
+    TwoHour = 3,
+    FourHour = 4,
+    Day = 5,
+    Week = 6,
+    Month = 7,
   }
 
   public enum Table
@@ -144,6 +144,11 @@ namespace TradingApp.Shared.Constants
         default:
           return "dailytf_data";
       }
+    }
+    public static string GetTable(TimeFrame tf)
+    {
+      if (tf <= TimeFrame.FourHour) return GetTable(Table.FifteenTF);
+      return GetTable(Table.DailyTF);
     }
     public static Table GetTable(string table)
     {

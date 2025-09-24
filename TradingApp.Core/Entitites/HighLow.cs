@@ -1,16 +1,23 @@
 namespace TradingApp.Core.Entities
 {
-  public class HighLow
+  public class HighLow : Candle
   {
-    public int id { get; set; }
-    public int token { get; set; }
-    public DateTime time { get; set; }
-    public double open { get; set; }
-    public double high { get; set; }
-    public double low { get; set; }
-    public double close { get; set; }
-    public double volume { get; set; }
+    public int? index { get; set; }
     public string? hl { get; set; }
-    public string? tf { get; set; }    
+    public string? tf { get; set; }
+    public HighLow(int index, string hl, string tf, int token, DateTime time, double open, double high, double low, double close, double volume)
+      : base(token, time, open, high, low, close, volume)
+    {
+      this.index = index;
+      this.hl = hl;
+      this.tf = tf;
+    }
+    public HighLow(int index, string hl, string tf, Candle candle)
+      : base(candle.token, candle.time, candle.open, candle.high, candle.low, candle.close, candle.volume)
+    {
+      this.index = index;
+      this.hl = hl;
+      this.tf = tf;
+    }
   }
 }
