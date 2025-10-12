@@ -7,13 +7,13 @@ namespace TradingApp.Infrastructure.Data
     {
         public TradingDbContext(DbContextOptions<TradingDbContext> options) : base(options) { }
 
-        public DbSet<Candle> DailyTF { get; set; }
-        public DbSet<Candle> FifteenTF { get; set; }
+        public DbSet<DailyTF> DailyTF { get; set; }
+        public DbSet<FifteenTF> FifteenTF { get; set; }
         public DbSet<HighLow> HighLow { get; set; }
         public DbSet<Trendline> Trendline { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Candle>(entity =>
+            modelBuilder.Entity<DailyTF>(entity =>
             {
                 entity.ToTable("dailytf_data");
                 entity.HasKey(e => e.id);
@@ -21,7 +21,7 @@ namespace TradingApp.Infrastructure.Data
                   .HasColumnType("timestamp without time zone");
             });
 
-            modelBuilder.Entity<Candle>(entity =>
+            modelBuilder.Entity<FifteenTF>(entity =>
             {
                 entity.ToTable("fifteentf_data");
                 entity.HasKey(e => e.id);

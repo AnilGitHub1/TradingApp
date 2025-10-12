@@ -33,6 +33,18 @@ namespace TradingApp.Shared.Constants
     Simulation
   }
 
+  public enum FetchType
+  {
+    All,
+    Latest
+  }
+
+  public enum HighLowMode
+  {
+    High,
+    Low,
+    HighLow
+  }
   public static class EnumMapper
   {
     public static string GetTimeFrame(TimeFrame tf)
@@ -170,6 +182,32 @@ namespace TradingApp.Shared.Constants
           return Table.Simulation;
         default:
           return Table.DailyTF;
+      }
+    }
+    public static FetchType GetFetchType(string fetchType)
+    {
+      fetchType = fetchType.ToLower();
+      fetchType = fetchType.Replace(" ", "");
+      switch (fetchType)
+      {
+        case "all":
+          return FetchType.All;
+        case "latest":
+          return FetchType.Latest;
+        default:
+          return FetchType.Latest;
+      }
+    }
+    public static string GetFetchType(FetchType fetchType)
+    {
+      switch (fetchType)
+      {
+        case FetchType.All:
+          return "A";
+        case FetchType.Latest:
+          return "Latest";
+        default:
+          return "Latest";
       }
     }
   }  

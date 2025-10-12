@@ -9,8 +9,9 @@ namespace TradingApp.Shared.ExternalApis
 {
   public class DhanClient<T> : IMarketApiClient<T> where T : Candle
   {
-    private const string _url = "https://ticks.dhan.co/getDataH";
-    private readonly DateTime DefaultStart = new(2008, 9, 11);
+    private readonly string _url = "https://ticks.dhan.co/getDataH";
+    private readonly DateTime DefaultStartFifteenTF = new DateTime(2024, 10, 8, 0, 0, 1);
+    private readonly DateTime DefaultStartDailyTF = new DateTime(2018, 1, 1, 0, 0, 1);
     private readonly DhanPayLoad _payLoad;
     private readonly TradingDbContext _db;
     private readonly HttpClient _http;
@@ -22,30 +23,34 @@ namespace TradingApp.Shared.ExternalApis
       _http = http;
       _logger = logger;
       _payLoad = new DhanPayLoad();
+      if(typeof(T) == typeof(FifteenTF))
+      {
+        _url = "https://ticks.dhan.co/getData";
+      }
     }
 
     #region Public Fetch Methods
-    public async Task<FetchResult<T>?> FetchAsync(string symbol, string timeFrame, CancellationToken ct)
-      => await FetchInternalAsync([symbol], timeFrame, DefaultStart, ct);
+    public async Task<FetchResult<T>?> FetchAsync(string symbol, TimeFrame timeFrame, CancellationToken ct)
+      => await FetchInternalAsync([symbol], timeFrame, timeFrame == TimeFrame.Day? DefaultStartDailyTF : DefaultStartFifteenTF, ct);
 
-    public async Task<FetchResult<T>?> FetchAsync(List<string> symbols, string timeFrame, CancellationToken ct)
-      => await FetchInternalAsync(symbols, timeFrame, DefaultStart, ct);
+    public async Task<FetchResult<T>?> FetchAsync(List<string> symbols, TimeFrame timeFrame, CancellationToken ct)
+      => await FetchInternalAsync(symbols, timeFrame, timeFrame == TimeFrame.Day? DefaultStartDailyTF : DefaultStartFifteenTF, ct);
 
-    public async Task<FetchResult<T>?> FetchAsync(string timeFrame, CancellationToken ct)
-      => await FetchInternalAsync([.. AppConstants.AllTokens.Values], timeFrame, DefaultStart, ct);
+    public async Task<FetchResult<T>?> FetchAsync(TimeFrame timeFrame, CancellationToken ct)
+      => await FetchInternalAsync([.. AppConstants.AllTokens.Values], timeFrame, timeFrame == TimeFrame.Day? DefaultStartDailyTF : DefaultStartFifteenTF, ct);
 
-    public async Task<FetchResult<T>?> FetchAsync(string symbol, string timeFrame, DateTime start, CancellationToken ct)
+    public async Task<FetchResult<T>?> FetchAsync(string symbol, TimeFrame timeFrame, DateTime start, CancellationToken ct)
       => await FetchInternalAsync([symbol], timeFrame, start, ct);
 
-    public async Task<FetchResult<T>?> FetchAsync(List<string> symbols, string timeFrame, DateTime start, CancellationToken ct)
+    public async Task<FetchResult<T>?> FetchAsync(List<string> symbols, TimeFrame timeFrame, DateTime start, CancellationToken ct)
       => await FetchInternalAsync(symbols, timeFrame, start, ct);
 
-    public async Task<FetchResult<T>?> FetchAsync(string timeFrame, DateTime start, CancellationToken ct)
+    public async Task<FetchResult<T>?> FetchAsync(TimeFrame timeFrame, DateTime start, CancellationToken ct)
       => await FetchInternalAsync([.. AppConstants.AllTokens.Values], timeFrame, start, ct);
     #endregion
 
     #region Private Helpers
-    private async Task<FetchResult<T>?> FetchInternalAsync(List<string> symbols, string timeFrame, DateTime start, CancellationToken ct)
+    private async Task<FetchResult<T>?> FetchInternalAsync(List<string> symbols, TimeFrame timeFrame, DateTime start, CancellationToken ct)
     {
       var combinedResult = new FetchResult<T>(new List<T>());
 
@@ -82,6 +87,7 @@ namespace TradingApp.Shared.ExternalApis
 
           combinedResult.Candles.AddRange(candles);
         }
+
         catch (Exception ex)
         {
           _logger.LogError(ex, "Error while fetching data for {Symbol}", symbol);
@@ -94,37 +100,66 @@ namespace TradingApp.Shared.ExternalApis
     private List<T> LoadCandles(ApiResponse apiResponse, int token)
     {
         var candles = new List<T>();
-      if (apiResponse?.Success == true && apiResponse.Data != null)
+        HashSet<long> existingTimes = new();
+      if (apiResponse?.Success == true && apiResponse.Data != null && apiResponse.Data.t != null && apiResponse.Data.t.Count > 0)
       {
         var data = apiResponse.Data;
 
         for (int i = 0; i < data.t.Count; i++)
         {
-          var args = new object[]
+
+          if (existingTimes.Contains(data.t[i]))
+          {
+            _logger.LogWarning("Duplicate timestamp {Timestamp} found for token {Token}. Skipping entry.", data.t[i], token);
+            continue;
+          }
+          else
+            existingTimes.Add(data.t[i]);
+          var candle = new object[]
           {
             token,
-            DateTimeOffset.FromUnixTimeSeconds(data.t[i]).DateTime,
+            DateTimeOffset.FromUnixTimeSeconds(data.t[i]).ToLocalTime().DateTime,
             data.o[i],
             data.h[i],
             data.l[i],
             data.c[i],
-            data.v[i]
+            (int)data.v[i]
           };
-          candles.Add((T)Activator.CreateInstance(typeof(T), args));
+          candles.Add((T)Activator.CreateInstance(typeof(T), candle));
         }
       }
 
       return candles;
     }
 
-    private void SetPayload(string symbol, DateTime startTime, string timeFrame)
+    private void SetPayload(string symbol, DateTime startTime, TimeFrame timeFrame)
     {
+      var startOffset = new DateTimeOffset(startTime, TimeZoneInfo.Local.GetUtcOffset(startTime));
       _payLoad.SYM = symbol;
-      _payLoad.START_TIME = startTime.ToString("o"); // ISO 8601 format
-      _payLoad.END_TIME = DateTime.Now.ToString("o");
-      _payLoad.START = new DateTimeOffset(startTime).ToUnixTimeSeconds();
-      _payLoad.END = new DateTimeOffset(DateTime.Now).ToUnixTimeSeconds();
-      _payLoad.INTERVAL = timeFrame;
+      _payLoad.START_TIME = timeFrame == TimeFrame.FifteenMinute ?
+        ToJsLikeString(new DateTime(startTime.Year, startTime.Month, startTime.Day, 0, 0, 1))
+       :startTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"); // ISO 8601 format
+      _payLoad.END_TIME = timeFrame == TimeFrame.FifteenMinute ?
+        ToJsLikeString(new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day + 1, 0, 0, 1))
+       :DateTimeOffset.Now.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'");
+      _payLoad.START = startOffset.ToUnixTimeSeconds();
+      _payLoad.END = DateTimeOffset.Now.ToUnixTimeSeconds();
+      _payLoad.INTERVAL = GetIntervalString(timeFrame);
+    }
+
+    string ToJsLikeString(DateTime dt)
+    {
+      return dt.ToString("ddd MMM dd yyyy HH:mm:ss 'GMT'zzz '(India Standard Time)'", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    private string GetIntervalString(TimeFrame timeFrame)
+    {
+      return timeFrame switch
+      {
+        TimeFrame.FifteenMinute => "15",
+        TimeFrame.Day => "D",
+        _ => throw new ArgumentException($"Unsupported time frame: {timeFrame}"),
+      };
     }
     private class CandleData
     {
@@ -133,7 +168,7 @@ namespace TradingApp.Shared.ExternalApis
       public List<double> h { get; set; } = new();
       public List<double> l { get; set; } = new();
       public List<double> c { get; set; } = new();
-      public List<long> v { get; set; } = new();
+      public List<double> v { get; set; } = new();
     }
 
     private class ApiResponse

@@ -80,7 +80,7 @@ namespace TradingApp.Processor.Workers
                 var factory = scope.ServiceProvider.GetRequiredService<IMarketApiFactory<DailyTF>>();
                 var client = factory.GetClient(providerName);
 
-                var fetched = await client.FetchAsync(s, timeframe, ct);
+                var fetched = await client.FetchAsync(s, TimeFrame.Day, ct);
                 if (fetched != null) allFetched.Add(fetched);
             }
 

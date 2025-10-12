@@ -9,8 +9,8 @@ namespace TradingApp.Core.Entities
     public double high { get; set; }
     public double low { get; set; }
     public double close { get; set; }
-    public double volume { get; set; }
-  public Candle(int token, DateTime time, double open, double high, double low, double close, double volume)
+    public int volume { get; set; }
+  public Candle(int token, DateTime time, double open, double high, double low, double close, int volume)
     {
       this.token = token;
       this.time = time;

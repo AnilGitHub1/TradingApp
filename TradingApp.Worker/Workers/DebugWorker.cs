@@ -39,7 +39,7 @@ namespace TradingApp.Processor.Workers
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
       _logger.LogInformation("DebugWorker running at: {time}", DateTimeOffset.Now);
-      
+
       if (_config.CleanUpConfig.Enabled)
         await _cleanUpService.ExecuteAsync(ct);
 
@@ -47,13 +47,14 @@ namespace TradingApp.Processor.Workers
         await _fetchServiceDaily.ExecuteAsync(ct);
 
       if (_config.FetchConfig.Enabled && _config.FetchConfig.TimeFrame == TimeFrame.FifteenMinute)
-          await _fetchServiceFifteen.ExecuteAsync(ct);
+        await _fetchServiceFifteen.ExecuteAsync(ct);
 
       if (_config.ProcessingConfig.Enabled)
-          await _processService.ExecuteAsync(ct);
+        await _processService.ExecuteAsync(ct);
 
       if (_config.AnalysisConfig.Enabled)
-          await _analysisService.ExecuteAsync(ct);
+        await _analysisService.ExecuteAsync(ct);
+      _logger.LogInformation("DebugWorker finished at: {time}", DateTimeOffset.Now);
     }
   }
 }

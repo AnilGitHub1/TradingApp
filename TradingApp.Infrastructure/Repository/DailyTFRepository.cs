@@ -15,7 +15,7 @@ namespace TradingApp.Infrastructure.Repositories
     {
     }
 
-    public async Task<IList<Candle>> GetDailyTFAsync(int token, int page, int pageSize)
+    public async Task<IEnumerable<Candle>> GetDailyTFAsync(int token, int page, int pageSize)
     {
       if (page <= 0 || pageSize <= 0)
         throw new ArgumentException("Page and pageSize must be greater than 0.");
@@ -28,7 +28,7 @@ namespace TradingApp.Infrastructure.Repositories
           .ToListAsync();
     }
 
-    public async Task<IList<Candle>> GetDailyTFAsync(int token, int limit)
+    public async Task<IEnumerable<Candle>> GetDailyTFAsync(int token, int limit)
     {
       return await Context.DailyTF
           .Where(d => d.token == token)
@@ -37,7 +37,7 @@ namespace TradingApp.Infrastructure.Repositories
           .ToListAsync();
     }
 
-    public async Task<IList<Candle>> GetAllDailyTFAsync(int token)
+    public async Task<IEnumerable<Candle>> GetAllDailyTFAsync(int token)
     {
       return await Context.DailyTF
           .AsNoTracking()
@@ -46,7 +46,7 @@ namespace TradingApp.Infrastructure.Repositories
           .ToListAsync();
     }
 
-    public async Task<IList<Candle>> GetAllDailyTFAsync(int token, DateTime from)
+    public async Task<IEnumerable<Candle>> GetAllDailyTFAsync(int token, DateTime from)
     {
       return await Context.DailyTF
           .AsNoTracking()
@@ -55,7 +55,7 @@ namespace TradingApp.Infrastructure.Repositories
           .ToListAsync();
     }
 
-    public async Task<IList<Candle>> GetAllDailyTFAsync(int token, DateTime from, DateTime to)
+    public async Task<IEnumerable<Candle>> GetAllDailyTFAsync(int token, DateTime from, DateTime to)
     {
       return await Context.DailyTF
           .AsNoTracking()
@@ -64,13 +64,13 @@ namespace TradingApp.Infrastructure.Repositories
           .ToListAsync();
     }
 
-    public async Task AddDailyTFAsync(Candle Candle)
+    public async Task AddDailyTFAsync(DailyTF Candle)
     {
       await Context.DailyTF.AddAsync(Candle);
       await Context.SaveChangesAsync();
     }
 
-    public async Task AddDailyTFAsync(IList<Candle> entities)
+    public async Task AddDailyTFAsync(IEnumerable<DailyTF> entities)
     {
       if (entities == null || !entities.Any()) return;
 
@@ -86,7 +86,7 @@ namespace TradingApp.Infrastructure.Repositories
       }
     }
 
-    public async Task UpdateDailyTFAsync(Candle Candle)
+    public async Task UpdateDailyTFAsync(DailyTF Candle)
     {
       Context.DailyTF.Update(Candle);
       await Context.SaveChangesAsync();
@@ -99,7 +99,7 @@ namespace TradingApp.Infrastructure.Repositories
       .ExecuteDeleteAsync();
     }
 
-    public async Task DeleteDailyTFAsync(Candle entity)
+    public async Task DeleteDailyTFAsync(DailyTF entity)
     {
       if (entity != null)
       {

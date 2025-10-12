@@ -9,6 +9,7 @@ namespace TradingApp.Shared.Services
 {
   public class DataProcessingService : IService
   {
+    private const int Window = 5;
     private readonly IDailyTFRepository _dailyTF;
     private readonly IFifteenTFRepository _fifteenTF;
     private readonly IHighLowRepository _highLowRepo; 
@@ -40,12 +41,13 @@ namespace TradingApp.Shared.Services
         var results = new List<HighLow>();
         if (ct.IsCancellationRequested) break;
         _logger.LogInformation("Processing data for symbol: {Symbol}", symbol);
-        IList<Candle> candles = [];
+        IEnumerable<Candle> candles = [];
+        TimeFrame prevTF = TimeFrame.FifteenMinute;
         foreach (var tf in timeFrames)
         {
           _logger.LogInformation("Processing symbol: {Symbol} for timeframe: {TimeFrame}", symbol, tf);
-          candles = await GetCandles(symbol, tf, candles, ct);
-          var highlows = GetHighLows(candles, tf);
+          candles = await GetCandles(symbol, tf, prevTF, candles, ct);
+          var highlows = GetHighLows(candles, tf, HighLowMode.High);
           if (highlows.Count > 0)
           {
             _logger.LogInformation("Found {Count} high/lows for symbol: {Symbol} in timeframe: {TimeFrame}", highlows.Count, symbol, tf);
@@ -60,6 +62,7 @@ namespace TradingApp.Shared.Services
           {
             results.AddRange(highlows);
           }
+          prevTF = tf;
         }
         if (results.Count > 0)
           await _highLowRepo.AddHighLowAsync(results);
@@ -68,40 +71,102 @@ namespace TradingApp.Shared.Services
       _logger.LogInformation("DataProcessingService completed.");
     }
 
-    // correct the logic for HighLow detection
-    private IList<HighLow> GetHighLows(IList<Candle> candles, TimeFrame tf)
+    private static List<HighLow> GetHighLows(IEnumerable<Candle> candles, TimeFrame tf, HighLowMode mode)
     {
-      List<HighLow> highlows = new();
-      for (int i = 1; i < candles.Count - 1; i++)
+      int n = candles.Count();
+      var results = new List<HighLow>();
+
+      List<HighLow>? highs = null;
+      List<HighLow>? lows = null;
+
+      if (mode == HighLowMode.HighLow)
       {
-        var prev = candles[i - 1];
-        var current = candles[i];
-        var next = candles[i + 1];
-        if (current.high > prev.high && current.high > next.high)
-        {
-          highlows.Add(new HighLow(i, "h", tf.ToString(), current));
-        }
-        else if (current.low < prev.low && current.low < next.low)
-        {
-          highlows.Add(new HighLow(i, "l", tf.ToString(), current));
-        }
+        // Run both in parallel
+        var highTask = Task.Run(() => ComputeHighs(candles, tf));
+        var lowTask = Task.Run(() => ComputeLows(candles, tf));
+        Task.WaitAll(highTask, lowTask);
+
+        highs = highTask.Result;
+        lows = lowTask.Result;
+        results.AddRange(highs);
+        results.AddRange(lows);
       }
-      return highlows;
-    }
-    private async Task<IList<Candle>> GetCandles(string symbol, TimeFrame tf, IList<Candle> existingCandles, CancellationToken ct)
-    {
-      TimeFrame baseTF = GetBaseTimeFrame(tf);
-      if (baseTF == tf)
+      else if (mode == HighLowMode.High)
       {
-        existingCandles = await GetCandlesFromDB(symbol, tf);
+          results = ComputeHighs(candles, tf);
+      }
+      else if (mode == HighLowMode.Low)
+      {
+          results = ComputeLows(candles, tf);
+      }
+
+      return results;
+    }
+
+    private static List<HighLow> ComputeHighs(IEnumerable<Candle> candles, TimeFrame tf)
+    {
+      int n = candles.Count();
+      var highs = new List<HighLow>();
+      for (int i = Window; i < n - Window; i++)
+      {
+        var current = candles.ElementAt(i);
+        double curHigh = current.high;
+        bool isLocalHigh = true;
+
+        for (int j = i - Window; j <= i + Window; j++)
+        {
+          if (candles.ElementAt(j).high > curHigh)
+          {
+            isLocalHigh = false;
+            break;
+          }
+        }
+
+        if (isLocalHigh)
+          highs.Add(new HighLow(i, "h", tf.ToString(), current));
+      }
+      return highs;
+    }
+
+    private static List<HighLow> ComputeLows(IEnumerable<Candle> candles, TimeFrame tf)
+    {
+      int n = candles.Count();
+      var lows = new List<HighLow>();
+      for (int i = Window; i < n - Window; i++)
+      {
+        var current = candles.ElementAt(i);
+        double curLow = current.low;
+        bool isLocalLow = true;
+
+        for (int j = i - Window; j <= i + Window; j++)
+        {
+          if (candles.ElementAt(j).low < curLow)
+          {
+            isLocalLow = false;
+            break;
+          }
+        }
+
+        if (isLocalLow)
+          lows.Add(new HighLow(i, "l", tf.ToString(), current));
+      }
+      return lows;
+    }
+
+    private async Task<IEnumerable<Candle>> GetCandles(string symbol, TimeFrame requiredTF, TimeFrame sourceTF, IEnumerable<Candle> existingCandles, CancellationToken ct)
+    {
+      TimeFrame baseTF = GetBaseTimeFrame(sourceTF);
+      if (baseTF == sourceTF)
+      {
+        existingCandles = await GetCandlesFromDB(symbol, baseTF);
       }
       else
       {
-        existingCandles = CandleConsolidator(existingCandles, tf, baseTF);
+        existingCandles = CandleConsolidator(existingCandles, requiredTF, sourceTF);
       }
       return existingCandles;
     }
-    private async Task<IList<Candle>> GetCandlesFromDB(string symbol, TimeFrame tf) {
+    private async Task<IEnumerable<Candle>> GetCandlesFromDB(string symbol, TimeFrame tf) {
       string tokenString;
       if (!AppConstants.StockLookUP.TryGetValue(symbol, out tokenString))
       {
@@ -115,7 +180,7 @@ namespace TradingApp.Shared.Services
         return await _fifteenTF.GetAllFifteenTFAsync(token);
       return await _dailyTF.GetAllDailyTFAsync(token);
     }
-    private IList<Candle> CandleConsolidator(IList<Candle> candles, TimeFrame requiredTF, TimeFrame sourceTF)
+    private IEnumerable<Candle> CandleConsolidator(IEnumerable<Candle> candles, TimeFrame requiredTF, TimeFrame sourceTF)
     {
       return candles;
     }

@@ -19,36 +19,65 @@ namespace TradingApp.Shared.Services
     {
       _logger = logger;
       _cfg = cfg.DebugOptions.FetchConfig;
-      _symbols = cfg.DebugOptions.Symbols.Count() == 0 ?
-      [.. AppConstants.AllTokens.Values] :
-      cfg.DebugOptions.Symbols;
+      _symbols = cfg.DebugOptions.Symbols;
       _client = factory.GetClient(EnumMapper.GetClient(_cfg.Client));
       _repo = repo;
     }
     public async Task ExecuteAsync(CancellationToken ct)
     {
+      _logger.LogInformation("Starting data fetch service for {timeFrame} candles using Dhan client.", _cfg.TimeFrame);
       if (_client == null)
       {
         _logger.LogError("No client registered for Dhan provider.");
       }
+      await UpdateCandlesAsync(_cfg.TimeFrame, ct);
+    }
+    // get all candles for a symbol from default start date based on timeframe
+    // and Inserts into Db In bulk
+    private async Task FetchAllCandlesAsync(string symbol, TimeFrame timeFrame, CancellationToken ct)
+    {
+      var result = await _client.FetchAsync(symbol, timeFrame, ct);
+      if (result == null || result.Candles == null)
+      {
+        _logger.LogInformation("No candles fetched for {symbol}.", symbol);
+        return;
+      }
+      var candles = result.Candles;
+      if (candles.Count > 0)
+      {
+        _logger.LogInformation("Fetched {count} candles for {symbol}. Inserting into database.", candles.Count, symbol);
+        await Insert(candles);
+      }
       else
       {
-        await UpdateLatestCandlesAsync(_cfg.TimeFrame, ct);
+        _logger.LogInformation("No candles fetched for {symbol}.", symbol);
       }
     }
-    private async Task UpdateLatestCandlesAsync(TimeFrame timeFrame, CancellationToken ct)
+    private async Task UpdateCandlesAsync(TimeFrame timeFrame, CancellationToken ct)
     {
-      string tf = EnumMapper.GetTimeFrame(timeFrame);
       var combinedResult = new List<T>();
       foreach (var symbol in _symbols)
       {
         var start = await GetLatestDateTime(symbol);
-        var result = await _client.FetchAsync(symbol, tf, start, ct);
+        if (start == default)
+        {
+          _logger.LogInformation("No existing data for {symbol}. Fetching all candles.", symbol);
+          await FetchAllCandlesAsync(symbol, timeFrame, ct);
+          continue;
+        }
+        continue;
+        var result = await _client.FetchAsync(symbol, timeFrame, start, ct);
         if (result == null || result.Candles == null)
         {
           continue;
         }
         var candles = result.Candles;
+        if (candles.Count == 0)
+        {
+          _logger.LogInformation("No new candles to update for {symbol}.", symbol);
+          continue;
+        }
+        _logger.LogInformation("Fetched {count} new candles for {symbol}.", candles.Count, symbol);
         if (combinedResult.Count + candles.Count > 10000)
         {
           await Insert(combinedResult);
@@ -80,15 +109,6 @@ namespace TradingApp.Shared.Services
       }
       return await _repo.GetLatestDateTimeAsync(token);
     }
-    // private ICandleRepository<T> GetRepository(TimeFrame timeFrame,
-    // ICandleRepository<DailyTF> dailyTF, ICandleRepository<FifteenTF> fifteenTF)
-    // {
-    //   return timeFrame switch
-    //   {
-    //     TimeFrame.Day => (ICandleRepository<T>) dailyTF,
-    //     TimeFrame.FifteenMinute => (ICandleRepository<T>) fifteenTF,
-    //     _ => throw new NotSupportedException()
-    //   };
-    // }
+    
   }
 }

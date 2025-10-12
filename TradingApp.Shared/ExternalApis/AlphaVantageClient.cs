@@ -5,6 +5,7 @@ using TradingApp.Core.Contracts;
 using TradingApp.Core.DTOs;
 using TradingApp.Core.Entities;
 using TradingApp.Core.Interfaces;
+using TradingApp.Shared.Constants;
 
 namespace TradingApp.Shared.ExternalApis
 {
@@ -21,13 +22,13 @@ namespace TradingApp.Shared.ExternalApis
       _http = http;
       _logger = logger;
     }
-    public async Task<FetchResult<T>?> FetchAsync(string symbol, string timeframe, CancellationToken ct)
+    public async Task<FetchResult<T>?> FetchAsync(string symbol, TimeFrame timeFrame, CancellationToken ct)
     {
       // This is an example URL pattern; replace with your actual endpoint/parameters.
-      var url = $"query?symbol={Uri.EscapeDataString(symbol)}&tf={Uri.EscapeDataString(timeframe)}";
+      var url = $"query?symbol={Uri.EscapeDataString(symbol)}&tf={Uri.EscapeDataString(timeFrame.ToString())}";
       try
       {
-        _logger.LogInformation("Calling Alpha provider for {symbol} {tf}", symbol, timeframe);
+        _logger.LogInformation("Calling Alpha provider for {symbol} {tf}", symbol, timeFrame.ToString());
         var resp = await _http.GetAsync(url, ct);
         resp.EnsureSuccessStatusCode();
 
@@ -67,107 +68,14 @@ namespace TradingApp.Shared.ExternalApis
         return null;
       }
     }
-    public async Task<FetchResult<T>?> FetchAsync(List<string> symbols, string timeframe, CancellationToken ct)
-    {
-      var symbol = symbols[0];
-      // This is an example URL pattern; replace with your actual endpoint/parameters.
-      var url = $"query?symbol={Uri.EscapeDataString(symbol)}&tf={Uri.EscapeDataString(timeframe)}";
-      try
-      {
-        _logger.LogInformation("Calling Alpha provider for {symbol} {tf}", symbol, timeframe);
-        var resp = await _http.GetAsync(url, ct);
-        resp.EnsureSuccessStatusCode();
-
-        // Example: assume API returns JSON array of candles.
-        var json = await resp.Content.ReadAsStringAsync(ct);
-        using var doc = JsonDocument.Parse(json);
-        // Replace the parse below with your real JSON shape
-        var token = doc.RootElement.GetProperty("token").GetInt32();
-        var list = new List<T>();
-        foreach (var el in doc.RootElement.GetProperty("candles").EnumerateArray())
-        {
-          var time = el.GetProperty("timestamp").GetDateTime();
-          var open = el.GetProperty("open").GetDouble();
-          var high = el.GetProperty("high").GetDouble();
-          var low = el.GetProperty("low").GetDouble();
-          var close = el.GetProperty("close").GetDouble();
-          var volume = el.GetProperty("volume").GetDouble();
-          var args = new object[]
-          {
-            token,
-            time = el.GetProperty("timestamp").GetDateTime(),
-            open = el.GetProperty("open").GetDouble(),
-            high = el.GetProperty("timestamp").GetDouble(),
-            low = el.GetProperty("timestamp").GetDouble(),
-            close = el.GetProperty("timestamp").GetDouble(),
-            volume = el.GetProperty("timestamp").GetDouble()
-          };
-          list.Add((T)Activator.CreateInstance(typeof(T), args));
-        }
-
-        return new FetchResult<T>(list);
-      }
-      catch (OperationCanceledException) { throw; }
-      catch (Exception ex)
-      {
-        _logger.LogError(ex, "Alpha provider failed for {symbol}", symbol);
-        return null;
-      }
-    }
-    public async Task<FetchResult<T>?> FetchAsync(string symbol, string timeframe, DateTime start, CancellationToken ct)
-    {
-      // This is an example URL pattern; replace with your actual endpoint/parameters.
-      var url = $"query?symbol={Uri.EscapeDataString(symbol)}&tf={Uri.EscapeDataString(timeframe)}";
-      try
-      {
-        _logger.LogInformation("Calling Alpha provider for {symbol} {tf}", symbol, timeframe);
-        var resp = await _http.GetAsync(url, ct);
-        resp.EnsureSuccessStatusCode();
-
-        // Example: assume API returns JSON array of candles.
-        var json = await resp.Content.ReadAsStringAsync(ct);
-        using var doc = JsonDocument.Parse(json);
-        // Replace the parse below with your real JSON shape
-        var token = doc.RootElement.GetProperty("token").GetInt32();
-        var list = new List<T>();
-        foreach (var el in doc.RootElement.GetProperty("candles").EnumerateArray())
-        {
-          var time = el.GetProperty("timestamp").GetDateTime();
-          var open = el.GetProperty("open").GetDouble();
-          var high = el.GetProperty("high").GetDouble();
-          var low = el.GetProperty("low").GetDouble();
-          var close = el.GetProperty("close").GetDouble();
-          var volume = el.GetProperty("volume").GetDouble();
-          var args = new object[]
-          {
-            token,
-            time = el.GetProperty("timestamp").GetDateTime(),
-            open = el.GetProperty("open").GetDouble(),
-            high = el.GetProperty("timestamp").GetDouble(),
-            low = el.GetProperty("timestamp").GetDouble(),
-            close = el.GetProperty("timestamp").GetDouble(),
-            volume = el.GetProperty("timestamp").GetDouble()
-          };
-          list.Add((T)Activator.CreateInstance(typeof(T), args));
-        }
-
-        return new FetchResult<T>(list);
-      }
-      catch (OperationCanceledException) { throw; }
-      catch (Exception ex)
-      {
-        _logger.LogError(ex, "Alpha provider failed for {symbol}", symbol);
-        return null;
-      }
-    }
-    public async Task<FetchResult<T>?> FetchAsync(List<string> symbols, string timeframe, DateTime start, CancellationToken ct)
+    public async Task<FetchResult<T>?> FetchAsync(List<string> symbols, TimeFrame timeFrame, CancellationToken ct)
     {
       var symbol = symbols[0];
       // This is an example URL pattern; replace with your actual endpoint/parameters.
-      var url = $"query?symbol={Uri.EscapeDataString(symbol)}&tf={Uri.EscapeDataString(timeframe)}";
+      var url = $"query?symbol={Uri.EscapeDataString(symbol)}&tf={Uri.EscapeDataString(timeFrame.ToString())}";
       try
       {
-        _logger.LogInformation("Calling Alpha provider for {symbol} {tf}", symbol, timeframe);
+        _logger.LogInformation("Calling Alpha provider for {symbol} {tf}", symbol, timeFrame.ToString());
         var resp = await _http.GetAsync(url, ct);
         resp.EnsureSuccessStatusCode();
 
@@ -207,14 +115,107 @@ namespace TradingApp.Shared.ExternalApis
         return null;
       }
     }
-    public async Task<FetchResult<T>?> FetchAsync(string timeframe, CancellationToken ct)
+    public async Task<FetchResult<T>?> FetchAsync(string symbol, TimeFrame timeFrame, DateTime start, CancellationToken ct)
+    {
+      // This is an example URL pattern; replace with your actual endpoint/parameters.
+      var url = $"query?symbol={Uri.EscapeDataString(symbol)}&tf={Uri.EscapeDataString(timeFrame.ToString())}";
+      try
+      {
+        _logger.LogInformation("Calling Alpha provider for {symbol} {tf}", symbol, timeFrame.ToString());
+        var resp = await _http.GetAsync(url, ct);
+        resp.EnsureSuccessStatusCode();
+
+        // Example: assume API returns JSON array of candles.
+        var json = await resp.Content.ReadAsStringAsync(ct);
+        using var doc = JsonDocument.Parse(json);
+        // Replace the parse below with your real JSON shape
+        var token = doc.RootElement.GetProperty("token").GetInt32();
+        var list = new List<T>();
+        foreach (var el in doc.RootElement.GetProperty("candles").EnumerateArray())
+        {
+          var time = el.GetProperty("timestamp").GetDateTime();
+          var open = el.GetProperty("open").GetDouble();
+          var high = el.GetProperty("high").GetDouble();
+          var low = el.GetProperty("low").GetDouble();
+          var close = el.GetProperty("close").GetDouble();
+          var volume = el.GetProperty("volume").GetDouble();
+          var args = new object[]
+          {
+            token,
+            time = el.GetProperty("timestamp").GetDateTime(),
+            open = el.GetProperty("open").GetDouble(),
+            high = el.GetProperty("timestamp").GetDouble(),
+            low = el.GetProperty("timestamp").GetDouble(),
+            close = el.GetProperty("timestamp").GetDouble(),
+            volume = el.GetProperty("timestamp").GetDouble()
+          };
+          list.Add((T)Activator.CreateInstance(typeof(T), args));
+        }
+
+        return new FetchResult<T>(list);
+      }
+      catch (OperationCanceledException) { throw; }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "Alpha provider failed for {symbol}", symbol);
+        return null;
+      }
+    }
+    public async Task<FetchResult<T>?> FetchAsync(List<string> symbols, TimeFrame timeFrame, DateTime start, CancellationToken ct)
+    {
+      var symbol = symbols[0];
+      // This is an example URL pattern; replace with your actual endpoint/parameters.
+      var url = $"query?symbol={Uri.EscapeDataString(symbol)}&tf={Uri.EscapeDataString(timeFrame.ToString())}";
+      try
+      {
+        _logger.LogInformation("Calling Alpha provider for {symbol} {tf}", symbol, timeFrame.ToString());
+        var resp = await _http.GetAsync(url, ct);
+        resp.EnsureSuccessStatusCode();
+
+        // Example: assume API returns JSON array of candles.
+        var json = await resp.Content.ReadAsStringAsync(ct);
+        using var doc = JsonDocument.Parse(json);
+        // Replace the parse below with your real JSON shape
+        var token = doc.RootElement.GetProperty("token").GetInt32();
+        var list = new List<T>();
+        foreach (var el in doc.RootElement.GetProperty("candles").EnumerateArray())
+        {
+          var time = el.GetProperty("timestamp").GetDateTime();
+          var open = el.GetProperty("open").GetDouble();
+          var high = el.GetProperty("high").GetDouble();
+          var low = el.GetProperty("low").GetDouble();
+          var close = el.GetProperty("close").GetDouble();
+          var volume = el.GetProperty("volume").GetDouble();
+          var args = new object[]
+          {
+            token,
+            time = el.GetProperty("timestamp").GetDateTime(),
+            open = el.GetProperty("open").GetDouble(),
+            high = el.GetProperty("timestamp").GetDouble(),
+            low = el.GetProperty("timestamp").GetDouble(),
+            close = el.GetProperty("timestamp").GetDouble(),
+            volume = el.GetProperty("timestamp").GetDouble()
+          };
+          list.Add((T)Activator.CreateInstance(typeof(T), args));
+        }
+
+        return new FetchResult<T>(list);
+      }
+      catch (OperationCanceledException) { throw; }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "Alpha provider failed for {symbol}", symbol);
+        return null;
+      }
+    }
+    public async Task<FetchResult<T>?> FetchAsync(TimeFrame timeFrame, CancellationToken ct)
         {
             var symbol = "symbols[0]";
             // This is an example URL pattern; replace with your actual endpoint/parameters.
-            var url = $"query?symbol={Uri.EscapeDataString(symbol)}&tf={Uri.EscapeDataString(timeframe)}";
+            var url = $"query?symbol={Uri.EscapeDataString(symbol)}&tf={Uri.EscapeDataString(timeFrame.ToString())}";
             try
             {
-                _logger.LogInformation("Calling Alpha provider for {symbol} {tf}", symbol, timeframe);
+                _logger.LogInformation("Calling Alpha provider for {symbol} {tf}", symbol, timeFrame.ToString());
                 var resp = await _http.GetAsync(url, ct);
                 resp.EnsureSuccessStatusCode();
 
@@ -254,14 +255,14 @@ namespace TradingApp.Shared.ExternalApis
                 return null;
             }
         }
-    public async Task<FetchResult<T>?> FetchAsync(string timeframe, DateTime start, CancellationToken ct)
+    public async Task<FetchResult<T>?> FetchAsync(TimeFrame timeFrame, DateTime start, CancellationToken ct)
         {
             var symbol = "symbols[0]";
             // This is an example URL pattern; replace with your actual endpoint/parameters.
-            var url = $"query?symbol={Uri.EscapeDataString(symbol)}&tf={Uri.EscapeDataString(timeframe)}";
+            var url = $"query?symbol={Uri.EscapeDataString(symbol)}&tf={Uri.EscapeDataString(timeFrame.ToString())}";
             try
             {
-                _logger.LogInformation("Calling Alpha provider for {symbol} {tf}", symbol, timeframe);
+                _logger.LogInformation("Calling Alpha provider for {symbol} {tf}", symbol, timeFrame.ToString());
                 var resp = await _http.GetAsync(url, ct);
                 resp.EnsureSuccessStatusCode();
 

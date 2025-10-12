@@ -6,16 +6,16 @@ namespace TradingApp.Core.Interfaces
 {
   public interface IDailyTFRepository : IRepository<Candle>
   {
-    Task<IList<Candle>> GetDailyTFAsync(int token, int page, int pageSize);
-    Task<IList<Candle>> GetDailyTFAsync(int token, int limit);
-    Task<IList<Candle>> GetAllDailyTFAsync(int token);
-    Task<IList<Candle>> GetAllDailyTFAsync(int token, DateTime from);
-    Task<IList<Candle>> GetAllDailyTFAsync(int token, DateTime from, DateTime to);
-    Task AddDailyTFAsync(Candle Candle);
-    Task AddDailyTFAsync(IList<Candle> Candle);
-    Task UpdateDailyTFAsync(Candle Candle);
+    Task<IEnumerable<Candle>> GetDailyTFAsync(int token, int page, int pageSize);
+    Task<IEnumerable<Candle>> GetDailyTFAsync(int token, int limit);
+    Task<IEnumerable<Candle>> GetAllDailyTFAsync(int token);
+    Task<IEnumerable<Candle>> GetAllDailyTFAsync(int token, DateTime from);
+    Task<IEnumerable<Candle>> GetAllDailyTFAsync(int token, DateTime from, DateTime to);
+    Task AddDailyTFAsync(DailyTF Candle);
+    Task AddDailyTFAsync(IEnumerable<DailyTF> Candle);
+    Task UpdateDailyTFAsync(DailyTF Candle);
     Task DeleteDailyTFAsync(int id);
-    Task DeleteDailyTFAsync(Candle entity);
+    Task DeleteDailyTFAsync(DailyTF entity);
     Task<int> DeleteDailyTFDataAsync(int token);
     Task<DateTime> GetLatestDateTimeAsync(int token);
   }

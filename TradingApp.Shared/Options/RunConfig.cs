@@ -48,6 +48,16 @@ namespace TradingApp.Shared.Options
       get => EnumMapper.GetTimeFrame(TimeFrame);
       set => TimeFrame = EnumMapper.GetTimeFrame(value);
     }
+
+    [XmlIgnore]
+    public FetchType FetchType { get; set; } = FetchType.Latest;
+
+    [XmlElement("fetchType")]
+    public string FetchTypeString
+    {
+      get => EnumMapper.GetFetchType(FetchType);
+      set => FetchType = EnumMapper.GetFetchType(value);
+    }
   }
 
   // Example: Data Processing Service

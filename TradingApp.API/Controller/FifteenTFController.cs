@@ -20,7 +20,7 @@ namespace TradingApp.API.Controller
         }
 
         [HttpGet]
-        public async Task<ActionResult<IList<Candle>>> GetFifteenTF([FromQuery] int token, [FromQuery] int page = 1, [FromQuery] int pageSize = 1)
+        public async Task<ActionResult<IEnumerable<Candle>>> GetFifteenTF([FromQuery] int token, [FromQuery] int page = 1, [FromQuery] int pageSize = 1)
         {
             if (page <= 0 || pageSize <= 0)
                 return BadRequest("Page and pageSize must be greater than 0.");
@@ -46,9 +46,9 @@ namespace TradingApp.API.Controller
         }
 
         [HttpGet("byToken")]
-        public async Task<ActionResult<IList<Candle>>> GetFifteenTFByToken([FromQuery] int token, int limit)
+        public async Task<ActionResult<IEnumerable<Candle>>> GetFifteenTFByToken([FromQuery] int token, int limit)
         {
-            IList<Candle> data;
+            IEnumerable<Candle> data;
             if (limit > 0)
                 data = await _fifteenTFRepository.GetFifteenTFAsync(token, limit);
             else
