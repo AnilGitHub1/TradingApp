@@ -63,8 +63,6 @@ namespace TradingApp.Shared.Options
   // Example: Data Processing Service
   public class DataProcessingServiceConfig : ServiceConfig
   {
-    public string[] Symbols { get; set; } = Array.Empty<string>();
-    public string TimeFrame { get; set; } = "1D";
   }
 
   // Example: Analysis Service

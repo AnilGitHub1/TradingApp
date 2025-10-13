@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using TradingApp.Core.Entities;
 using TradingApp.Core.Interfaces;
-using TradingApp.Infrastructure.Data;
 using TradingApp.Shared.Constants;
 using TradingApp.Shared.Options;
 
@@ -15,6 +14,7 @@ namespace TradingApp.Shared.Services
     private readonly IHighLowRepository _highLowRepo; 
     private readonly ILogger<DataProcessingService> _logger;
     private readonly DataProcessingServiceConfig _cfg;
+    private readonly List<string> _symbols;
 
     public DataProcessingService(IDailyTFRepository dailyTF,
     IFifteenTFRepository fifteenTF,
@@ -25,88 +25,68 @@ namespace TradingApp.Shared.Services
       _highLowRepo = highLowRepo;
       _cfg = config.DebugOptions.ProcessingConfig;
       _logger = logger;
+      _symbols = config.DebugOptions.Symbols;
     }
 
     public async Task ExecuteAsync(CancellationToken ct)
     {
-      _logger.LogInformation("DataProcessingService started with config: {@Config}", _cfg);
-      var symbols = _cfg.Symbols;
-      if (_cfg.Symbols.Length == 0)
+      _logger.LogInformation("DataProcessingService started with config: {@Config}", _cfg.ToString());
+      List<TimeFrame> timeFrames = Utility.GetAllTimeframes();
+      foreach (var symbol in _symbols)
       {
-        symbols = AppConstants.AllTokens.Values.ToArray();
-      }
-      List<TimeFrame> timeFrames = GetAllTimeframes();
-      foreach (var symbol in symbols)
-      {
-        var results = new List<HighLow>();
+        var results = new SortedDictionary<DateTime, HighLow>();
         if (ct.IsCancellationRequested) break;
         _logger.LogInformation("Processing data for symbol: {Symbol}", symbol);
         IEnumerable<Candle> candles = [];
-        TimeFrame prevTF = TimeFrame.FifteenMinute;
         foreach (var tf in timeFrames)
         {
           _logger.LogInformation("Processing symbol: {Symbol} for timeframe: {TimeFrame}", symbol, tf);
-          candles = await GetCandles(symbol, tf, prevTF, candles, ct);
-          var highlows = GetHighLows(candles, tf, HighLowMode.High);
-          if (highlows.Count > 0)
-          {
-            _logger.LogInformation("Found {Count} high/lows for symbol: {Symbol} in timeframe: {TimeFrame}", highlows.Count, symbol, tf);
-            results.AddRange(highlows);
-          }
-          if (results.Count + highlows.Count > 10000)
-          {
-            await _highLowRepo.AddHighLowAsync(results);
-            results.Clear();
-          }
-          else
-          {
-            results.AddRange(highlows);
-          }
-          prevTF = tf;
+          candles = await GetCandles(symbol, tf, candles, ct);
+          GetHighLowsForTimeFrame(candles, tf, HighLowMode.High, results);
         }
         if (results.Count > 0)
-          await _highLowRepo.AddHighLowAsync(results);
+          await _highLowRepo.AddHighLowAsync(results.Values.ToList());
         _logger.LogInformation("Completed processing for symbol: {Symbol}", symbol);
       }
-      _logger.LogInformation("DataProcessingService completed.");
+      _logger.LogInformation("DataProcessingService completed...");
+    }
+    private async Task<IEnumerable<Candle>> GetCandles(string symbol, TimeFrame tf, IEnumerable<Candle> prevCandles, CancellationToken ct)
+    {
+      if (ct.IsCancellationRequested) return [];
+      if (tf == TimeFrame.FifteenMinute || tf == TimeFrame.Day)
+      {
+        return await Utility.GetCandlesFromDB(symbol, tf, _dailyTF, _fifteenTF);
+      }
+      else
+      {
+        var resampledCandles = Utility.Resample(tf, prevCandles);
+        return resampledCandles;
+      }
     }
 
-    private static List<HighLow> GetHighLows(IEnumerable<Candle> candles, TimeFrame tf, HighLowMode mode)
+    private static void GetHighLowsForTimeFrame(IEnumerable<Candle> candles, TimeFrame tf, HighLowMode mode, SortedDictionary<DateTime, HighLow> results)
     {
-      int n = candles.Count();
-      var results = new List<HighLow>();
-
-      List<HighLow>? highs = null;
-      List<HighLow>? lows = null;
-
+      string tfStr = EnumMapper.GetTimeFrame(tf);
       if (mode == HighLowMode.HighLow)
       {
         // Run both in parallel
-        var highTask = Task.Run(() => ComputeHighs(candles, tf));
-        var lowTask = Task.Run(() => ComputeLows(candles, tf));
+        var highTask = Task.Run(() => ComputeHighs(candles, tfStr, results));
+        var lowTask = Task.Run(() => ComputeLows(candles, tfStr, results));
         Task.WaitAll(highTask, lowTask);
-
-        highs = highTask.Result;
-        lows = lowTask.Result;
-        results.AddRange(highs);
-        results.AddRange(lows);
       }
       else if (mode == HighLowMode.High)
       {
-          results = ComputeHighs(candles, tf);
+        ComputeHighs(candles, tfStr, results);
       }
       else if (mode == HighLowMode.Low)
       {
-          results = ComputeLows(candles, tf);
+        ComputeLows(candles, tfStr, results);
       }
-
-      return results;
     }
 
-    private static List<HighLow> ComputeHighs(IEnumerable<Candle> candles, TimeFrame tf)
+    private static void ComputeHighs(IEnumerable<Candle> candles, string tf, SortedDictionary<DateTime, HighLow> results)
     {
       int n = candles.Count();
-      var highs = new List<HighLow>();
       for (int i = Window; i < n - Window; i++)
       {
         var current = candles.ElementAt(i);
@@ -123,15 +103,22 @@ namespace TradingApp.Shared.Services
         }
 
         if (isLocalHigh)
-          highs.Add(new HighLow(i, "h", tf.ToString(), current));
+        {
+          if (!results.TryGetValue(candles.ElementAt(i).time, out var highLow))
+          {
+            results[candles.ElementAt(i).time] = new HighLow("h", tf, current);
+          }
+          else
+          {
+            highLow.tf += tf;
+          }
+        }
       }
-      return highs;
     }
 
-    private static List<HighLow> ComputeLows(IEnumerable<Candle> candles, TimeFrame tf)
+    private static void ComputeLows(IEnumerable<Candle> candles, string tf, SortedDictionary<DateTime, HighLow> results)
     {
       int n = candles.Count();
-      var lows = new List<HighLow>();
       for (int i = Window; i < n - Window; i++)
       {
         var current = candles.ElementAt(i);
@@ -148,59 +135,18 @@ namespace TradingApp.Shared.Services
         }
 
         if (isLocalLow)
-          lows.Add(new HighLow(i, "l", tf.ToString(), current));
+        {
+          if (!results.TryGetValue(candles.ElementAt(i).time, out var highLow))
+          {
+            results[candles.ElementAt(i).time] = new HighLow("l", tf, current);
+          }
+          else
+          {
+            highLow.tf += tf;
+          }
+        }
       }
-      return lows;
     }
-
-    private async Task<IEnumerable<Candle>> GetCandles(string symbol, TimeFrame requiredTF, TimeFrame sourceTF, IEnumerable<Candle> existingCandles, CancellationToken ct)
-    {
-      TimeFrame baseTF = GetBaseTimeFrame(sourceTF);
-      if (baseTF == sourceTF)
-      {
-        existingCandles = await GetCandlesFromDB(symbol, baseTF);
-      }
-      else
-      {
-        existingCandles = CandleConsolidator(existingCandles, requiredTF, sourceTF);
-      }
-      return existingCandles;
-    }
-    private async Task<IEnumerable<Candle>> GetCandlesFromDB(string symbol, TimeFrame tf) {
-      string tokenString;
-      if (!AppConstants.StockLookUP.TryGetValue(symbol, out tokenString))
-      {
-        throw new KeyNotFoundException();
-      }
-      if (!int.TryParse(tokenString, out int token))
-      {
-        throw new InvalidDataException();
-      }
-      if (tf <= TimeFrame.FourHour)
-        return await _fifteenTF.GetAllFifteenTFAsync(token);
-      return await _dailyTF.GetAllDailyTFAsync(token);
-    }
-    private IEnumerable<Candle> CandleConsolidator(IEnumerable<Candle> candles, TimeFrame requiredTF, TimeFrame sourceTF)
-    {
-      return candles;
-    }
-    private TimeFrame GetBaseTimeFrame(TimeFrame tf)
-    {
-      if (tf <= TimeFrame.FourHour)
-        return TimeFrame.FifteenMinute;
-      return TimeFrame.Day;      
-    }
-    private List<TimeFrame> GetAllTimeframes()
-    { return new List<TimeFrame>{
-        TimeFrame.FifteenMinute,
-        TimeFrame.ThirtyMinute,
-        TimeFrame.OneHour,
-        TimeFrame.TwoHour,
-        TimeFrame.FourHour,
-        TimeFrame.Day,
-        TimeFrame.Week,
-        TimeFrame.Month
-      };
-    }
+       
   }
 }
