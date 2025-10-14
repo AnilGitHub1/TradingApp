@@ -5,10 +5,11 @@ namespace TradingApp.Shared.Constants
     Dhan,
   }
 
-  public enum CandleType
+  public enum HighLowType
   {
     High,
-    Low
+    Low,
+    HighLow
   }
 
   public enum TimeFrame
@@ -39,12 +40,8 @@ namespace TradingApp.Shared.Constants
     Latest
   }
 
-  public enum HighLowMode
-  {
-    High,
-    Low,
-    HighLow
-  }
+  public enum CandleCompareResult { Lower, Equal, Higher }
+  
   public static class EnumMapper
   {
     public static string GetTimeFrame(TimeFrame tf)

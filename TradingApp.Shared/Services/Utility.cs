@@ -156,12 +156,89 @@ namespace TradingApp.Shared.Services
           return currentTime.Date;
       }
     }
+    public static CandleCompareResult CompareCandles(Candle candle1, Candle candle2, HighLowType mode)
+    {
+      if (mode == HighLowType.High)
+      {
+        var c1HighVal = Math.Max(candle1.open, candle1.close);
+        var c2HighVal = Math.Max(candle2.open, candle2.close);
 
+        if (c1HighVal > candle2.high)
+          return CandleCompareResult.Higher;
+        else if (c2HighVal > candle1.high)
+          return CandleCompareResult.Lower;
+        else
+          return CandleCompareResult.Equal;
+      }
+      if (mode == HighLowType.Low)
+      {
+        var c1LowVal = Math.Min(candle1.open, candle1.close);
+        var c2LowVal = Math.Min(candle2.open, candle2.close);
+
+        if (c1LowVal < candle2.low)
+          return CandleCompareResult.Lower;
+        else if (c2LowVal < candle1.low)
+          return CandleCompareResult.Higher;
+        else
+          return CandleCompareResult.Equal;
+      }
+        return CandleCompareResult.Equal;
+    }
+    public static bool IsTrendLinePossible(Candle c1, Candle c3, int dx, SlopeRange slopeRange, HighLowType hl)
+    {
+      if (hl == HighLowType.High)
+      {
+        double c3HighVal = Math.Max(c3.open, c3.close);
+        double c1HighVal = Math.Max(c1.open, c1.close);
+
+        // Check upper bound
+        if (c3HighVal > slopeRange.Max * dx + c1HighVal)
+          return false;
+
+        // Check lower bound
+        if (c3HighVal < slopeRange.Min * dx + c1HighVal)
+          return false;
+      }
+      else if (hl == HighLowType.Low)
+      {
+        double c3LowVal = Math.Min(c3.open, c3.close);
+        double c1LowVal = Math.Min(c1.open, c1.close);
+
+        // Check lower bound
+        if (c3LowVal > slopeRange.Max * dx + c1LowVal)
+          return false;
+
+        // Check upper bound
+        if (c3LowVal < slopeRange.Min * dx + c1LowVal)
+          return false;
+      }
+
+      return true;
+    }
+    public static SlopeRange GetSlopeRange(Candle c1, Candle c2, int c1Index, int c2Index, HighLowType hl)
+    {
+      if (hl == HighLowType.High)
+      {
+        return new SlopeRange
+        (
+                (c2.high - Math.Max(c1.open, c1.close)) / (c2Index - c1Index),
+                (c1.high - Math.Max(c2.open, c2.close)) / (c1Index - c2Index)
+        );
+      }
+      else // 
+      {
+        return new SlopeRange
+        (
+                (c1.low - Math.Min(c2.open, c2.close)) / (c1Index - c2Index),
+                (c2.low - Math.Min(c1.open, c1.close)) / (c2Index - c1Index)
+        );
+      }
+    } 
     public static TimeFrame GetBaseTimeFrame(TimeFrame tf)
     {
       if (tf <= TimeFrame.FourHour)
         return TimeFrame.FifteenMinute;
-      return TimeFrame.Day;      
+      return TimeFrame.Day;
     }
     public static List<TimeFrame> GetAllTimeframes()
     { return new List<TimeFrame>{

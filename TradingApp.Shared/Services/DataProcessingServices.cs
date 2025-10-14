@@ -42,7 +42,7 @@ namespace TradingApp.Shared.Services
         {
           _logger.LogInformation("Processing symbol: {Symbol} for timeframe: {TimeFrame}", symbol, tf);
           candles = await GetCandles(symbol, tf, candles, ct);
-          GetHighLowsForTimeFrame(candles, tf, HighLowMode.High, results);
+          GetHighLowsForTimeFrame(candles, tf, HighLowType.High, results);
         }
         if (results.Count > 0)
           await _highLowRepo.AddHighLowAsync(results.Values.ToList());
@@ -64,21 +64,21 @@ namespace TradingApp.Shared.Services
       }
     }
 
-    private static void GetHighLowsForTimeFrame(IEnumerable<Candle> candles, TimeFrame tf, HighLowMode mode, SortedDictionary<DateTime, HighLow> results)
+    private static void GetHighLowsForTimeFrame(IEnumerable<Candle> candles, TimeFrame tf, HighLowType mode, SortedDictionary<DateTime, HighLow> results)
     {
       string tfStr = EnumMapper.GetTimeFrame(tf);
-      if (mode == HighLowMode.HighLow)
+      if (mode == HighLowType.HighLow)
       {
         // Run both in parallel
         var highTask = Task.Run(() => ComputeHighs(candles, tfStr, results));
         var lowTask = Task.Run(() => ComputeLows(candles, tfStr, results));
         Task.WaitAll(highTask, lowTask);
       }
-      else if (mode == HighLowMode.High)
+      else if (mode == HighLowType.High)
       {
         ComputeHighs(candles, tfStr, results);
       }
-      else if (mode == HighLowMode.Low)
+      else if (mode == HighLowType.Low)
       {
         ComputeLows(candles, tfStr, results);
       }

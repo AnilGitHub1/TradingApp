@@ -34,11 +34,6 @@ namespace TradingApp.API.Controller
                 d.id,
                 d.token,
                 d.time,
-                d.open,
-                d.high,
-                d.low,
-                d.close,
-                d.volume,
                 d.hl,
                 d.tf
             }).ToList();
@@ -63,11 +58,6 @@ namespace TradingApp.API.Controller
                 d.id,
                 d.token,
                 d.time,
-                d.open,
-                d.high,
-                d.low,
-                d.close,
-                d.volume,
                 d.hl,
                 d.tf
             }).ToList();
