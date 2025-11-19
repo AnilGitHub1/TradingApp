@@ -82,7 +82,7 @@ namespace TradingApp.Shared.ExternalApis
           var candles = new List<T>();
           if (apiResponse != null)
           {
-            candles = LoadCandles(apiResponse, token);
+            candles = LoadCandles(apiResponse, token, start);
           }
 
           combinedResult.Candles.AddRange(candles);
@@ -97,7 +97,7 @@ namespace TradingApp.Shared.ExternalApis
       return combinedResult.Candles.Count > 0 ? combinedResult : null;
     }
 
-    private List<T> LoadCandles(ApiResponse apiResponse, int token)
+    private List<T> LoadCandles(ApiResponse apiResponse, int token, DateTime startDateTime = default)
     {
         var candles = new List<T>();
         HashSet<long> existingTimes = new();
@@ -107,6 +107,9 @@ namespace TradingApp.Shared.ExternalApis
 
         for (int i = 0; i < data.t.Count; i++)
         {
+          DateTime candleDateTime = DateTimeOffset.FromUnixTimeSeconds(data.t[i]).ToLocalTime().DateTime;
+          if (startDateTime != default && candleDateTime <= startDateTime)
+            continue;
 
           if (existingTimes.Contains(data.t[i]))
           {
@@ -118,7 +121,7 @@ namespace TradingApp.Shared.ExternalApis
           var candle = new object[]
           {
             token,
-            DateTimeOffset.FromUnixTimeSeconds(data.t[i]).ToLocalTime().DateTime,
+            candleDateTime,
             data.o[i],
             data.h[i],
             data.l[i],

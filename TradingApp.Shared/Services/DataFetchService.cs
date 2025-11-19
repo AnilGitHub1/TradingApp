@@ -45,12 +45,12 @@ namespace TradingApp.Shared.Services
       var candles = result.Candles;
       if (candles.Count > 0)
       {
-        _logger.LogInformation("Fetched {count} candles for {symbol}. Inserting into database.", candles.Count, symbol);
+        _logger.LogInformation($"Fetched {candles.Count} candles for {symbol}. Inserting into database.");
         await Insert(candles);
       }
       else
       {
-        _logger.LogInformation("No candles fetched for {symbol}.", symbol);
+        _logger.LogInformation($"No candles fetched for {symbol}.");
       }
     }
     private async Task UpdateCandlesAsync(TimeFrame timeFrame, CancellationToken ct)
@@ -65,16 +65,17 @@ namespace TradingApp.Shared.Services
           await FetchAllCandlesAsync(symbol, timeFrame, ct);
           continue;
         }
-        continue;
+        _logger.LogInformation($"Fetching candles for {symbol} from start date {start}");
         var result = await _client.FetchAsync(symbol, timeFrame, start, ct);
         if (result == null || result.Candles == null)
-        {
+        {          
+          _logger.LogInformation($"No candles fetched for {symbol}");
           continue;
         }
         var candles = result.Candles;
         if (candles.Count == 0)
         {
-          _logger.LogInformation("No new candles to update for {symbol}.", symbol);
+          _logger.LogInformation($"0 new candles fetched to update for symbol {symbol}.");
           continue;
         }
         _logger.LogInformation("Fetched {count} new candles for {symbol}.", candles.Count, symbol);

@@ -7,12 +7,12 @@ namespace TradingApp.Core.Entities
     public string tf { get; set; }
     public int token { get; set; }
     public DateTime time { get; set; }
-    public HighLow(string hl, string tf, Candle candle)
+    public HighLow(string hl, string tf, int token, DateTime time)
     {
       this.hl = hl;
       this.tf = tf;
-      this.token = candle.token;
-      this.time = candle.time;
+      this.token = token;
+      this.time = time;
     }
   }
 }

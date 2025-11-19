@@ -106,7 +106,7 @@ namespace TradingApp.Shared.Services
         {
           if (!results.TryGetValue(candles.ElementAt(i).time, out var highLow))
           {
-            results[candles.ElementAt(i).time] = new HighLow("h", tf, current);
+            results[candles.ElementAt(i).time] = new HighLow("h", tf, current.token, current.time);
           }
           else
           {
@@ -138,7 +138,7 @@ namespace TradingApp.Shared.Services
         {
           if (!results.TryGetValue(candles.ElementAt(i).time, out var highLow))
           {
-            results[candles.ElementAt(i).time] = new HighLow("l", tf, current);
+            results[candles.ElementAt(i).time] = new HighLow("l", tf, current.token, current.time);
           }
           else
           {
