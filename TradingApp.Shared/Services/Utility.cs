@@ -315,20 +315,19 @@ namespace TradingApp.Shared.Services
         _ => 1,
       };
     }
-    public static int GetToken(string symbol)
+    public static void GetToken(string symbol, out int token)
     {
-      int token;
       if (!AppConstants.StockLookUP.TryGetValue(symbol, out var tokenValue))
       {
-        // _logger.LogWarning("Symbol {Symbol} not found in token lookup.", symbol);
-        throw new KeyNotFoundException();
+        if (!int.TryParse(tokenValue, out token))
+        {
+          token = -1;
+        }
       }
-      if (!int.TryParse(tokenValue, out token))
+      else
       {
-        // _logger.LogWarning("Token {TokenValue} for symbol {Symbol} is not a valid integer.", tokenValue, symbol);
-        throw new InvalidDataException();
+        token = -1;
       }
-      return token;
     }
   }
 }

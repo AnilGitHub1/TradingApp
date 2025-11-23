@@ -59,7 +59,12 @@ namespace TradingApp.Shared.ExternalApis
       {
         try
         {
-          int token = Utility.GetToken(symbol);
+          Utility.GetToken(symbol, out int token);
+          if(token == -1)
+          {
+            _logger.LogWarning("Token not found for symbol {Symbol}. Skipping.", symbol);
+            continue;
+          }
           // var token = AppConstants.AllTokens[symbol];
           SetPayload(symbol, token, start, timeFrame);
           var response = await _http.PostAsJsonAsync(_url, _payLoad, ct);

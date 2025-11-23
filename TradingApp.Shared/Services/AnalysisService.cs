@@ -39,6 +39,12 @@ namespace TradingApp.Shared.Services
       var results = new AnalysisResult(new List<Trendline>());
       foreach (var symbol in _symbols)
       {
+        Utility.GetToken(symbol, out int token);
+        if(token == -1)
+        {
+          _logger.LogWarning("Token not found for symbol {Symbol}. Skipping.", symbol);
+          continue;
+        }
         if (ct.IsCancellationRequested) break;
         _logger.LogInformation("Processing data for symbol: {Symbol}", symbol);
         IEnumerable<Candle> candles = [];
@@ -69,7 +75,7 @@ namespace TradingApp.Shared.Services
         return resampledCandles;
       }
     }
-    private async Task<IList<HighLow>> GetHighLows(string symbol)
+    private async Task<IList<HighLow>> GetHighLows(string symbol, DateTime from = default)
     {
       string tokenString;
       if (!AppConstants.StockLookUP.TryGetValue(symbol, out tokenString))
