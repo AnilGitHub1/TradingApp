@@ -9,7 +9,8 @@ namespace TradingApp.Shared.Services
     private const double MAX_NUM = double.MaxValue;
     public static async Task<IEnumerable<Candle>> GetCandlesFromDB(string symbol, TimeFrame tf,
      IDailyTFRepository _dailyTF,
-     IFifteenTFRepository _fifteenTF) {
+     IFifteenTFRepository _fifteenTF,
+     DateTime from = default) {
       string tokenString;
       if (!AppConstants.StockLookUP.TryGetValue(symbol, out tokenString))
       {
@@ -20,8 +21,8 @@ namespace TradingApp.Shared.Services
         throw new InvalidDataException();
       }
       if (tf <= TimeFrame.FourHour)
-        return await _fifteenTF.GetAllFifteenTFAsync(token);
-      return await _dailyTF.GetAllDailyTFAsync(token);
+        return await _fifteenTF.GetAllFifteenTFAsync(token, from);
+      return await _dailyTF.GetAllDailyTFAsync(token, from);
     }
     public static List<Candle> Resample(TimeFrame timeFrame, IEnumerable<Candle> candles)
     {
@@ -91,7 +92,6 @@ namespace TradingApp.Shared.Services
         return new List<Candle>();
       }
     }
-
     public static DateTime GetNextTimeResample(DateTime currentTime, TimeFrame timeFrame)
     {
       switch (timeFrame)
@@ -118,7 +118,6 @@ namespace TradingApp.Shared.Services
           return currentTime.AddDays(1);
       }
     }
-
     public static DateTime GetInitialTimeResample(DateTime currentTime, TimeFrame timeFrame)
     {
       // Assume trading day starts at 09:15 like in your Python version
@@ -234,6 +233,38 @@ namespace TradingApp.Shared.Services
         );
       }
     } 
+    public static DateTime GetStartTimeOfAnalysis(TimeFrame timeFrame, DateTime? time = null)
+    {
+      DateTime t = time ?? DateTime.Now;
+
+      switch (timeFrame)
+      {
+        case TimeFrame.FifteenMinute:
+          return t.AddDays(-31);
+
+        case TimeFrame.ThirtyMinute:
+          return t.AddDays(-61);
+
+        case TimeFrame.OneHour:
+          return t.AddDays(-(14 * 7));   // 14 weeks
+
+        case TimeFrame.TwoHour:
+          return t.AddDays(-(28 * 7));   // 28 weeks
+
+        case TimeFrame.FourHour:
+          return new DateTime(t.Year, t.Month, t.Day).AddYears(-1);
+
+        case TimeFrame.Day:
+          return new DateTime(t.Year, t.Month, t.Day).AddYears(-2);
+
+        case TimeFrame.Week:
+        case TimeFrame.Month:
+          return new DateTime(t.Year, t.Month, t.Day).AddYears(-20);
+
+        default:
+            return t;
+      }
+    }
     public static TimeFrame GetBaseTimeFrame(TimeFrame tf)
     {
       if (tf <= TimeFrame.FourHour)
@@ -241,7 +272,9 @@ namespace TradingApp.Shared.Services
       return TimeFrame.Day;
     }
     public static List<TimeFrame> GetAllTimeframes()
-    { return new List<TimeFrame>{
+    {
+      return new List<TimeFrame>
+      {
         TimeFrame.FifteenMinute,
         TimeFrame.ThirtyMinute,
         TimeFrame.OneHour,
@@ -251,6 +284,51 @@ namespace TradingApp.Shared.Services
         TimeFrame.Week,
         TimeFrame.Month
       };
+    }
+    public static int TimeFrameToMinutes(TimeFrame tf)
+    {
+      return tf switch
+      {
+        TimeFrame.FifteenMinute => 15,
+        TimeFrame.ThirtyMinute => 30,
+        TimeFrame.OneHour => 60,
+        TimeFrame.TwoHour => 120,
+        TimeFrame.FourHour => 240,
+        TimeFrame.Day => 1440,
+        TimeFrame.Week => 10080,
+        TimeFrame.Month => 43200,
+        _ => 1440,
+      };
+    }
+    public static int TimeFrameCandlesPerDay(TimeFrame tf)
+    {
+      return tf switch
+      {
+        TimeFrame.FifteenMinute => 25,
+        TimeFrame.ThirtyMinute => 13,
+        TimeFrame.OneHour => 7,
+        TimeFrame.TwoHour => 4,
+        TimeFrame.FourHour => 2,
+        TimeFrame.Day => 1,
+        TimeFrame.Week => 0,
+        TimeFrame.Month => 0,
+        _ => 1,
+      };
+    }
+    public static int GetToken(string symbol)
+    {
+      int token;
+      if (!AppConstants.StockLookUP.TryGetValue(symbol, out var tokenValue))
+      {
+        // _logger.LogWarning("Symbol {Symbol} not found in token lookup.", symbol);
+        throw new KeyNotFoundException();
+      }
+      if (!int.TryParse(tokenValue, out token))
+      {
+        // _logger.LogWarning("Token {TokenValue} for symbol {Symbol} is not a valid integer.", tokenValue, symbol);
+        throw new InvalidDataException();
+      }
+      return token;
     }
   }
 }

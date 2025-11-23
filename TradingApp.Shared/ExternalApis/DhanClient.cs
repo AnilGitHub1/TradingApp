@@ -4,6 +4,7 @@ using TradingApp.Core.Entities;
 using TradingApp.Core.Interfaces;
 using TradingApp.Infrastructure.Data;
 using TradingApp.Shared.Constants;
+using TradingApp.Shared.Services;
 
 namespace TradingApp.Shared.ExternalApis
 {
@@ -58,19 +59,9 @@ namespace TradingApp.Shared.ExternalApis
       {
         try
         {
+          int token = Utility.GetToken(symbol);
           // var token = AppConstants.AllTokens[symbol];
-          SetPayload(symbol, start, timeFrame);
-          int token;
-          if (!AppConstants.StockLookUP.TryGetValue(symbol, out var tokenValue))
-          {
-            _logger.LogWarning("Symbol {Symbol} not found in token lookup.", symbol);
-            continue;
-          }
-          if (!int.TryParse(tokenValue, out token))
-          {
-            _logger.LogWarning("Token {TokenValue} for symbol {Symbol} is not a valid integer.", tokenValue, symbol);
-            continue;
-          }
+          SetPayload(symbol, token, start, timeFrame);
           var response = await _http.PostAsJsonAsync(_url, _payLoad, ct);
 
           if (!response.IsSuccessStatusCode)
@@ -135,7 +126,7 @@ namespace TradingApp.Shared.ExternalApis
       return candles;
     }
 
-    private void SetPayload(string symbol, DateTime startTime, TimeFrame timeFrame)
+    private void SetPayload(string symbol, int token, DateTime startTime, TimeFrame timeFrame)
     {
       var startOffset = new DateTimeOffset(startTime, TimeZoneInfo.Local.GetUtcOffset(startTime));
       _payLoad.SYM = symbol;
@@ -144,7 +135,8 @@ namespace TradingApp.Shared.ExternalApis
        :startTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"); // ISO 8601 format
       _payLoad.END_TIME = timeFrame == TimeFrame.FifteenMinute ?
         ToJsLikeString(new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day + 1, 0, 0, 1))
-       :DateTimeOffset.Now.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'");
+       : DateTimeOffset.Now.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'");
+       _payLoad.SEC_ID = token;
       _payLoad.START = startOffset.ToUnixTimeSeconds();
       _payLoad.END = DateTimeOffset.Now.ToUnixTimeSeconds();
       _payLoad.INTERVAL = GetIntervalString(timeFrame);

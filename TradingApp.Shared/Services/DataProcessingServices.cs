@@ -1,3 +1,4 @@
+using System.Reflection.Metadata;
 using Microsoft.Extensions.Logging;
 using TradingApp.Core.Entities;
 using TradingApp.Core.Interfaces;
@@ -30,32 +31,64 @@ namespace TradingApp.Shared.Services
 
     public async Task ExecuteAsync(CancellationToken ct)
     {
-      _logger.LogInformation("DataProcessingService started with config: {@Config}", _cfg.ToString());
+      _logger.LogInformation("highlow data ProcessingService started with config: {@Config}", _cfg.ToString());
       List<TimeFrame> timeFrames = Utility.GetAllTimeframes();
       foreach (var symbol in _symbols)
       {
         var results = new SortedDictionary<DateTime, HighLow>();
+        if (!AppConstants.StockLookUP.TryGetValue(symbol, out var tokenString))
+        {
+          _logger.LogWarning("Symbol {symbol} not found in token list.", symbol);
+          continue;
+        } 
+        if (!int.TryParse(tokenString, out var token))
+        {
+          _logger.LogWarning("Token {tokenString} for symbol {symbol} is not a valid integer.", tokenString, symbol);
+          continue;
+        }
         if (ct.IsCancellationRequested) break;
-        _logger.LogInformation("Processing data for symbol: {Symbol}", symbol);
+        _logger.LogInformation("highlow data Processing for symbol: {Symbol}", symbol);
         IEnumerable<Candle> candles = [];
+        var startTime = DateTime.MinValue;
         foreach (var tf in timeFrames)
         {
-          _logger.LogInformation("Processing symbol: {Symbol} for timeframe: {TimeFrame}", symbol, tf);
-          candles = await GetCandles(symbol, tf, candles, ct);
-          GetHighLowsForTimeFrame(candles, tf, HighLowType.High, results);
+          var analysisStartTime = await GetProcessingStartTime(token, tf);
+          candles = await GetCandles(symbol, tf, candles, analysisStartTime, ct);
+          if(candles == null || candles.Count() < 6)
+          {
+            _logger.LogInformation("No candles found for symbol: {Symbol}, timeframe: {TimeFrame}", symbol, tf);
+            continue;
+          }
+          var analysisCandles = new List<Candle>(candles.Count() - Window);
+          if (analysisStartTime == default)
+          {
+            analysisCandles = candles.ToList();
+          }
+          else
+          {
+            for (int i = 0; i < candles.Count() - Window; i++)
+            {
+              if (candles.ElementAt(i + Window).time > analysisStartTime)
+              {
+                analysisCandles.Add(candles.ElementAt(i));
+              }
+            }
+          }
+          GetHighLowsForTimeFrame(analysisCandles, tf, HighLowType.High, results);
         }
         if (results.Count > 0)
           await _highLowRepo.AddHighLowAsync(results.Values.ToList());
-        _logger.LogInformation("Completed processing for symbol: {Symbol}", symbol);
+        _logger.LogInformation("Completed highlow data processing for symbol: {Symbol}", symbol);
       }
       _logger.LogInformation("DataProcessingService completed...");
     }
-    private async Task<IEnumerable<Candle>> GetCandles(string symbol, TimeFrame tf, IEnumerable<Candle> prevCandles, CancellationToken ct)
+    private async Task<IEnumerable<Candle>> GetCandles(string symbol, TimeFrame tf, IEnumerable<Candle> prevCandles, DateTime from, CancellationToken ct)
     {
       if (ct.IsCancellationRequested) return [];
+      if( from == default) from = from.AddYears(12);
       if (tf == TimeFrame.FifteenMinute || tf == TimeFrame.Day)
       {
-        return await Utility.GetCandlesFromDB(symbol, tf, _dailyTF, _fifteenTF);
+        return await Utility.GetCandlesFromDB(symbol, tf, _dailyTF, _fifteenTF, tf == TimeFrame.FifteenMinute ? from.AddMonths(-1): from.AddMonths(-10));
       }
       else
       {
@@ -63,7 +96,6 @@ namespace TradingApp.Shared.Services
         return resampledCandles;
       }
     }
-
     private static void GetHighLowsForTimeFrame(IEnumerable<Candle> candles, TimeFrame tf, HighLowType mode, SortedDictionary<DateTime, HighLow> results)
     {
       string tfStr = EnumMapper.GetTimeFrame(tf);
@@ -83,7 +115,6 @@ namespace TradingApp.Shared.Services
         ComputeLows(candles, tfStr, results);
       }
     }
-
     private static void ComputeHighs(IEnumerable<Candle> candles, string tf, SortedDictionary<DateTime, HighLow> results)
     {
       int n = candles.Count();
@@ -104,9 +135,9 @@ namespace TradingApp.Shared.Services
 
         if (isLocalHigh)
         {
-          if (!results.TryGetValue(candles.ElementAt(i).time, out var highLow))
+          if (!results.TryGetValue(current.time, out var highLow))
           {
-            results[candles.ElementAt(i).time] = new HighLow("h", tf, current.token, current.time);
+            results[current.time] = new HighLow("h", tf, current.token, current.time);
           }
           else
           {
@@ -115,7 +146,6 @@ namespace TradingApp.Shared.Services
         }
       }
     }
-
     private static void ComputeLows(IEnumerable<Candle> candles, string tf, SortedDictionary<DateTime, HighLow> results)
     {
       int n = candles.Count();
@@ -147,6 +177,17 @@ namespace TradingApp.Shared.Services
         }
       }
     }
-       
+    private async Task<DateTime> GetProcessingStartTime(int token, TimeFrame tf)
+    {
+      var lastestHighLow = await _highLowRepo.GetLatestHighLowAsync(token, EnumMapper.GetTimeFrame(tf));
+      if (lastestHighLow != null)
+      {
+        return lastestHighLow.time;
+      }
+      else
+      {
+        return default;
+      }
+    }
   }
 }
