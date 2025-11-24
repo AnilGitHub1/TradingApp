@@ -7,19 +7,10 @@ namespace TradingApp.Shared.Services
   public static class Utility
   {
     private const double MAX_NUM = double.MaxValue;
-    public static async Task<IEnumerable<Candle>> GetCandlesFromDB(string symbol, TimeFrame tf,
+    public static async Task<IEnumerable<Candle>> GetCandlesFromDB(int token, TimeFrame tf,
      IDailyTFRepository _dailyTF,
      IFifteenTFRepository _fifteenTF,
      DateTime from = default) {
-      string tokenString;
-      if (!AppConstants.StockLookUP.TryGetValue(symbol, out tokenString))
-      {
-        throw new KeyNotFoundException();
-      }
-      if (!int.TryParse(tokenString, out int token))
-      {
-        throw new InvalidDataException();
-      }
       if (tf <= TimeFrame.FourHour)
         return await _fifteenTF.GetAllFifteenTFAsync(token, from);
       return await _dailyTF.GetAllDailyTFAsync(token, from);
@@ -233,6 +224,10 @@ namespace TradingApp.Shared.Services
         );
       }
     } 
+    public static double GetIntercept(double slope, double y, int x)
+    {
+      return y - slope * x;
+    }
     public static DateTime GetStartTimeOfAnalysis(TimeFrame timeFrame, DateTime? time = null)
     {
       DateTime t = time ?? DateTime.Now;

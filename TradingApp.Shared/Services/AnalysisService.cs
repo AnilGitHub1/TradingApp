@@ -6,6 +6,9 @@ using TradingApp.Shared.Options;
 using TradingApp.Shared.Constants;
 using TradingApp.Core.Entities;
 using System.Collections.Concurrent;
+using OR;
+using Microsoft.VisualBasic;
+using System.Security.Cryptography.X509Certificates;
 
 namespace TradingApp.Shared.Services
 {
@@ -48,26 +51,26 @@ namespace TradingApp.Shared.Services
         if (ct.IsCancellationRequested) break;
         _logger.LogInformation("Processing data for symbol: {Symbol}", symbol);
         IEnumerable<Candle> candles = [];
-        IList<HighLow> highLows = await GetHighLows(symbol);
+        IList<HighLow> highLows = await GetHighLows(token);
         foreach (var tf in timeFrames)
         {
           _logger.LogInformation("Processing symbol: {Symbol} for timeframe: {TimeFrame}", symbol, tf);
-          candles = await GetCandles(symbol, tf, candles, ct);
+          candles = await GetCandles(token, tf, candles, ct);
           var highLowCandles = GetHighLowCandles(candles, highLows, tf, HighLowType.High);
           var highsForDownTrendLines = GetHighsForDownTrendLines(highLowCandles, candles, HighLowType.High);
-          GetTrendLinesForTimeFrame(candles, highsForDownTrendLines, tf);
+          GetTrendLinesForTimeFrame(candles, highsForDownTrendLines, tf, results);
         }
         _logger.LogInformation("Completed processing for symbol: {Symbol}", symbol);
       }
       if (results.Trendlines.Count > 0)
         await _trendlineRepo.AddTrendlineAsync(results.Trendlines.ToList());
     }
-    private async Task<IEnumerable<Candle>> GetCandles(string symbol, TimeFrame tf, IEnumerable<Candle> prevCandles, CancellationToken ct)
+    private async Task<IEnumerable<Candle>> GetCandles(int token, TimeFrame tf, IEnumerable<Candle> prevCandles, CancellationToken ct)
     {
       if (ct.IsCancellationRequested) return [];
       if (tf == TimeFrame.FifteenMinute || tf == TimeFrame.Day)
       {
-        return await Utility.GetCandlesFromDB(symbol, tf, _dailyTF, _fifteenTF);
+        return await Utility.GetCandlesFromDB(token, tf, _dailyTF, _fifteenTF);
       }
       else
       {
@@ -75,18 +78,9 @@ namespace TradingApp.Shared.Services
         return resampledCandles;
       }
     }
-    private async Task<IList<HighLow>> GetHighLows(string symbol, DateTime from = default)
+    private async Task<IList<HighLow>> GetHighLows(int token, DateTime from = default)
     {
-      string tokenString;
-      if (!AppConstants.StockLookUP.TryGetValue(symbol, out tokenString))
-      {
-        throw new KeyNotFoundException();
-      }
-      if (!int.TryParse(tokenString, out int token))
-      {
-        throw new InvalidDataException();
-      }
-      return await _highLowRepo.GetAllHighLowAsync(token);
+      return await _highLowRepo.GetAllHighLowAsync(token, from);
     }
     public IList<int> GetHighLowCandles(IEnumerable<Candle> candles, IList<HighLow> highLows, TimeFrame tf, HighLowType hl)
     {
@@ -139,20 +133,96 @@ namespace TradingApp.Shared.Services
       return result;
     }
 
-    private List<Trendline> GetTrendLinesForTimeFrame(IEnumerable<Candle> candles, IList<int> highLows, TimeFrame tf)
+    private void GetTrendLinesForTimeFrame(IEnumerable<Candle> candles, IList<int> highLows, TimeFrame tf, AnalysisResult results)
     {
       var triplets = GetFirstOrderTrendlines(candles, highLows);
       var allOrders = FindAllOrdersTrendlinesApriori(triplets, out int maxK, parallelVerify: true);
       var maxorders = allOrders[maxK];
-      var trendlines = new List<Trendline>(); 
+      Trendline trendline = Trendline.EmptyTrendline();
       string tfStr = EnumMapper.GetTimeFrame(tf);
       foreach (var order in maxorders)
       {
-        var startCandle = candles.ElementAt(order[0]);
-        var endCandle = candles.ElementAt(order[^1]);
-        var slopeRange = Utility.GetSlopeRange(startCandle, endCandle, order[0], order[^1], HighLowType.High);
+        trendline = CreateModelAndSolve(candles, order);
+        if (trendline.slope == 0.0 && trendline.intercept == 0.0)
+          continue;
+        else
+        {
+          trendline.tf = tfStr;
+          results.Trendlines.Add(trendline);
+          break;
+        }
       }
-      return trendlines;
+    }
+    private Trendline CreateModelAndSolve(IEnumerable<Candle> candles, IList<int> highs)
+    {
+      if (candles.Count() == 0 || highs.Count == 0)
+        return Trendline.EmptyTrendline();
+      var model = new MipModel();
+      var startCandle = candles.ElementAt(highs[0]);
+      var endCandle = candles.ElementAt(highs[^1]);    
+      var slopeRange = Utility.GetSlopeRange(startCandle, endCandle, highs[0], highs[^1], HighLowType.High);
+      var slopeVar = model.AddVariable("slope", slopeRange.Min, slopeRange.Max, MipVarType.Continuous);
+      var interceptVar = model.AddVariable("intercept", Utility.GetIntercept(slopeRange.Max, endCandle.high, highs[^1]),
+      Utility.GetIntercept(slopeRange.Min, startCandle.high, highs[0]), MipVarType.Continuous);
+      var highVars = new Dictionary<int, MipVariable>();
+      foreach (var hi in highs)
+      {
+        // Create variables 
+        var highVar = model.AddVariable("high_" + hi, 0, 1, MipVarType.Binary, 0.0);
+        highVars[hi] = highVar;
+        var highCandle = candles.ElementAt(hi);
+        // Constraint:  slope * hi + intercept <= highCandle.high
+        var lessThanConstraint = model.AddConstraint($"insideWick_{hi}", ConstraintSense.LessOrEqual, highCandle.high);
+        lessThanConstraint.AddTerm(slopeVar.Id, hi);
+        lessThanConstraint.AddTerm(interceptVar.Id, 1.0);
+        // Constraint: slope * hi + intercept >= max(open, close)
+        var higherThanConstraint = model.AddConstraint($"aboveBody_{hi}", ConstraintSense.GreaterOrEqual,
+         Math.Max(highCandle.open, highCandle.close));
+        higherThanConstraint.AddTerm(slopeVar.Id, hi);
+        higherThanConstraint.AddTerm(interceptVar.Id, 1.0);
+      }
+      model.SetObjective(ObjectiveSense.Minimize,
+      new Dictionary<int, double>()
+      {
+        { slopeVar.Id, highs.Sum(x=>x)},
+        { interceptVar.Id, highs.Count}
+      });
+      var sol = MipSolver.SolveWithOrTools(model);
+      if (!sol.IsOptimal)
+        return Trendline.EmptyTrendline();
+      double m = sol.VariableValues[slopeVar.Id];
+      double c = sol.VariableValues[interceptVar.Id];
+
+      // Validate 
+      foreach (var hi in highs)
+      {
+        var ch = candles.ElementAt(hi);
+        double y = m * hi + c;
+        if (y > ch.high + 1e-9)
+        {
+          _logger.LogWarning($"Trendline validation failed at high {ch.ToString()}: calculated y {y} exceeds candle high {ch.high}");
+          return Trendline.EmptyTrendline();
+        }
+        if (y < Math.Max(ch.open, ch.close) - 1e-9)
+        {
+          _logger.LogWarning($"Trendline validation failed at high {ch.ToString()}: calculated y {y} below candle body max {Math.Max(ch.open, ch.close)}");
+          return Trendline.EmptyTrendline();
+        }
+      }
+      return new Trendline(
+        token: -1,
+        starttime: startCandle.time,
+        endtime: endCandle.time,
+        slope: m,
+        intercept: c,
+        hl: "h",
+        tf: "",
+        index: -1,
+        index1: highs[0],
+        index2: highs[^1],
+        connects: highs.Count,
+        totalconnects: highs.Count
+      );
     }
     private List<int[]> GetFirstOrderTrendlines(IEnumerable<Candle> candles, IList<int> highs)
     {

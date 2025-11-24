@@ -53,7 +53,7 @@ namespace TradingApp.Shared.Services
         foreach (var tf in timeFrames)
         {
           var analysisStartTime = await GetProcessingStartTime(token, tf);
-          candles = await GetCandles(symbol, tf, candles, analysisStartTime, ct);
+          candles = await GetCandles(token, tf, candles, analysisStartTime, ct);
           if(candles == null || candles.Count() < 6)
           {
             _logger.LogInformation("No candles found for symbol: {Symbol}, timeframe: {TimeFrame}", symbol, tf);
@@ -82,13 +82,13 @@ namespace TradingApp.Shared.Services
       }
       _logger.LogInformation("DataProcessingService completed...");
     }
-    private async Task<IEnumerable<Candle>> GetCandles(string symbol, TimeFrame tf, IEnumerable<Candle> prevCandles, DateTime from, CancellationToken ct)
+    private async Task<IEnumerable<Candle>> GetCandles(int token, TimeFrame tf, IEnumerable<Candle> prevCandles, DateTime from, CancellationToken ct)
     {
       if (ct.IsCancellationRequested) return [];
       if( from == default) from = from.AddYears(12);
       if (tf == TimeFrame.FifteenMinute || tf == TimeFrame.Day)
       {
-        return await Utility.GetCandlesFromDB(symbol, tf, _dailyTF, _fifteenTF, tf == TimeFrame.FifteenMinute ? from.AddMonths(-1): from.AddMonths(-10));
+        return await Utility.GetCandlesFromDB(token, tf, _dailyTF, _fifteenTF, tf == TimeFrame.FifteenMinute ? from.AddMonths(-1): from.AddMonths(-10));
       }
       else
       {

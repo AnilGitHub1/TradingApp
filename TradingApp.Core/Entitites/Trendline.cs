@@ -37,5 +37,22 @@ namespace TradingApp.Core.Entities
       this.connects = connects;
       this.totalconnects = totalconnects;
     }
+    public static Trendline EmptyTrendline()
+    {
+      return new Trendline(
+          token: -1,
+          starttime: DateTime.MinValue,
+          endtime: DateTime.MinValue,
+          slope: 0.0,
+          intercept: 0.0,
+          hl: "",
+          tf: "",
+          index: -1,
+          index1: -1,
+          index2: -1,
+          connects: 0,
+          totalconnects: 0
+      );
+    }
   }
 }
