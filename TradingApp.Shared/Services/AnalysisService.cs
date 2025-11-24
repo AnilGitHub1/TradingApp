@@ -171,7 +171,7 @@ namespace TradingApp.Shared.Services
             if (Utility.IsTrendLinePossible(candles.ElementAt(highs[i]),
              candles.ElementAt(highs[k]), highs[k] - highs[i], slopeRange, HighLowType.High))
             {
-              triplets.Add(new int[] { highs[i], highs[j], highs[k] });
+              triplets.Add([highs[i], highs[j], highs[k]]);
             }
           }
         }
