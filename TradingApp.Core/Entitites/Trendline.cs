@@ -41,8 +41,8 @@ namespace TradingApp.Core.Entities
     {
       return new Trendline(
           token: -1,
-          starttime: DateTime.MinValue,
-          endtime: DateTime.MinValue,
+          starttime: DateTime.UtcNow,
+          endtime: DateTime.UtcNow,
           slope: 0.0,
           intercept: 0.0,
           hl: "",
@@ -54,5 +54,39 @@ namespace TradingApp.Core.Entities
           totalconnects: 0
       );
     }
+    public static Trendline EmptyHighTrendline()
+    {
+      return new Trendline(
+          token: -1,
+          starttime: DateTime.UtcNow,
+          endtime: DateTime.UtcNow,
+          slope: 0.0,
+          intercept: 0.0,
+          hl: "h",
+          tf: "",
+          index: -1,
+          index1: -1,
+          index2: -1,
+          connects: 0,
+          totalconnects: 0
+      );
+    }  
+    public static Trendline EmptyLowTrendline()
+    {
+      return new Trendline(
+          token: -1,
+          starttime: DateTime.UtcNow,
+          endtime: DateTime.UtcNow,
+          slope: 0.0,
+          intercept: 0.0,
+          hl: "l",
+          tf: "",
+          index: -1,
+          index1: -1,
+          index2: -1,
+          connects: 0,
+          totalconnects: 0
+      );
+    }  
   }
 }

@@ -1,4 +1,3 @@
-using System.Reflection.Metadata;
 using Microsoft.Extensions.Logging;
 using TradingApp.Core.Entities;
 using TradingApp.Core.Interfaces;

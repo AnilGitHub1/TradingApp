@@ -166,16 +166,34 @@ namespace TradingApp.Shared.Constants
       switch (table)
       {
         case "dailytf_data":
+        case "dailytf":
+        case "dailytfdata":
+        case "daily_tf":
+        case "dailydata":
+        case "daily":
           return Table.DailyTF;
         case "fifteentf_data":
+        case "fifteentf":
+        case "fifteentfdata":
+        case "fifteen_tf":
+        case "fifteendata":
+        case "fifteen":
           return Table.FifteenTF;
         case "trendline_data":
+        case "trendline":
+        case "trendlinedata":
           return Table.TrendLine;
         case "highlow_data":
+        case "highlow":
+        case "highlowdata":
           return Table.HighLow;
         case "trade_data":
+        case "trade":
+        case "tradedata":
           return Table.Trade;
         case "simulation_data":
+        case "simulation":
+        case "simulationdata":
           return Table.Simulation;
         default:
           return Table.DailyTF;

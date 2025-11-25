@@ -280,6 +280,20 @@ namespace TradingApp.Shared.Services
         TimeFrame.Month
       };
     }
+    public static List<string> GetAllTimeframeStrings()
+    {
+      return new List<string>
+      {
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "4h",
+        "1D",
+        "1W",
+        "1M"
+      };
+    }
     public static int TimeFrameToMinutes(TimeFrame tf)
     {
       return tf switch

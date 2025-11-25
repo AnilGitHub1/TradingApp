@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using TradingApp.Infrastructure.Data;
 using TradingApp.Core.Contracts;
 using TradingApp.Core.Interfaces;
 using TradingApp.Shared.Options;
@@ -7,8 +6,6 @@ using TradingApp.Shared.Constants;
 using TradingApp.Core.Entities;
 using System.Collections.Concurrent;
 using OR;
-using Microsoft.VisualBasic;
-using System.Security.Cryptography.X509Certificates;
 
 namespace TradingApp.Shared.Services
 {

@@ -141,6 +141,7 @@ static void AddScopes(IServiceCollection services)
   services.AddScoped<DataProcessingService>();
   services.AddScoped<AnalysisService>();
   services.AddScoped<DatabaseCleanUpService>();
+  services.AddScoped<TableInitializationService>();
 }
 
 public class DhanConfig

@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging;
 using TradingApp.Infrastructure.Data;
-using TradingApp.Core.Contracts;
 using TradingApp.Core.Interfaces;
 using TradingApp.Shared.Options;
 using Microsoft.EntityFrameworkCore;

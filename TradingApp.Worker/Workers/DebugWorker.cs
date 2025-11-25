@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using TradingApp.Core.Entities;
+using TradingApp.Core.Interfaces;
 using TradingApp.Shared.Constants;
 using TradingApp.Shared.Options;
 using TradingApp.Shared.Services;
@@ -11,11 +12,7 @@ namespace TradingApp.Processor.Workers
   {
     private readonly ILogger<DebugWorker> _logger;
     private readonly DebugOptions _config;
-    private readonly DataFetchService<DailyTF> _fetchServiceDaily;
-    private readonly DataFetchService<FifteenTF> _fetchServiceFifteen;
-    private readonly DataProcessingService _processService;
-    private readonly AnalysisService _analysisService;
-    private readonly DatabaseCleanUpService _cleanUpService;
+    private readonly List<IService> _services = [];
 
     public DebugWorker(
         ILogger<DebugWorker> logger,
@@ -24,36 +21,33 @@ namespace TradingApp.Processor.Workers
         DataFetchService<FifteenTF> fetchServiceFifteen,
         DataProcessingService processService,
         AnalysisService analysisService,
-        DatabaseCleanUpService cleanUpService
+        DatabaseCleanUpService cleanUpService,
+        TableInitializationService tableInitService
         )
     {
       _logger = logger;
       _config = config.DebugOptions;
-      _fetchServiceDaily = fetchServiceDaily;
-      _fetchServiceFifteen = fetchServiceFifteen;
-      _processService = processService;
-      _analysisService = analysisService;
-      _cleanUpService = cleanUpService;
+
+      if (_config.FetchConfig.Enabled)
+      {
+        if (fetchServiceDaily != null && _config.FetchConfig.TimeFrame == TimeFrame.Day)
+          _services.Add(fetchServiceDaily);
+        else if (fetchServiceFifteen != null && _config.FetchConfig.TimeFrame == TimeFrame.FifteenMinute)
+          _services.Add(fetchServiceFifteen);
+      }
+      if (processService != null && _config.ProcessingConfig.Enabled) _services.Add(processService);
+      if (analysisService != null && _config.AnalysisConfig.Enabled) _services.Add(analysisService);
+      if (cleanUpService != null && _config.CleanUpConfig.Enabled) _services.Add(cleanUpService);
+      if (tableInitService != null && _config.InitConfig.Enabled) _services.Add(tableInitService);
     }
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
       _logger.LogInformation("DebugWorker running at: {time}", DateTimeOffset.Now);
-
-      if (_config.CleanUpConfig.Enabled)
-        await _cleanUpService.ExecuteAsync(ct);
-
-      if (_config.FetchConfig.Enabled && _config.FetchConfig.TimeFrame == TimeFrame.Day)
-        await _fetchServiceDaily.ExecuteAsync(ct);
-
-      if (_config.FetchConfig.Enabled && _config.FetchConfig.TimeFrame == TimeFrame.FifteenMinute)
-        await _fetchServiceFifteen.ExecuteAsync(ct);
-
-      if (_config.ProcessingConfig.Enabled)
-        await _processService.ExecuteAsync(ct);
-
-      if (_config.AnalysisConfig.Enabled)
-        await _analysisService.ExecuteAsync(ct);
+      foreach (var service in _services)
+      {
+        await service.ExecuteAsync(ct);
+      }
       _logger.LogInformation("DebugWorker finished at: {time}", DateTimeOffset.Now);
     }
   }
