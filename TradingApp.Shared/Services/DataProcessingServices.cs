@@ -35,14 +35,10 @@ namespace TradingApp.Shared.Services
       foreach (var symbol in _symbols)
       {
         var results = new SortedDictionary<DateTime, HighLow>();
-        if (!AppConstants.StockLookUP.TryGetValue(symbol, out var tokenString))
+        Utility.GetToken(symbol, out int token);
+        if(token == -1)
         {
-          _logger.LogWarning("Symbol {symbol} not found in token list.", symbol);
-          continue;
-        } 
-        if (!int.TryParse(tokenString, out var token))
-        {
-          _logger.LogWarning("Token {tokenString} for symbol {symbol} is not a valid integer.", tokenString, symbol);
+          _logger.LogWarning("Token not found for symbol: {Symbol}, skipping...", symbol);
           continue;
         }
         if (ct.IsCancellationRequested) break;
@@ -65,10 +61,12 @@ namespace TradingApp.Shared.Services
           }
           else
           {
+            bool startFound = false;
             for (int i = 0; i < candles.Count() - Window; i++)
             {
-              if (candles.ElementAt(i + Window).time > analysisStartTime)
+              if (startFound || candles.ElementAt(i + Window).time > analysisStartTime)
               {
+                startFound = true;
                 analysisCandles.Add(candles.ElementAt(i));
               }
             }
