@@ -313,11 +313,11 @@ namespace TradingApp.Shared.Services
     {
       return tf switch
       {
-        TimeFrame.FifteenMinute => 25,
-        TimeFrame.ThirtyMinute => 13,
-        TimeFrame.OneHour => 7,
-        TimeFrame.TwoHour => 4,
-        TimeFrame.FourHour => 2,
+        TimeFrame.FifteenMinute => 25/1,
+        TimeFrame.ThirtyMinute => (int)Math.Ceiling(25/2.0),
+        TimeFrame.OneHour => (int)Math.Ceiling(25/4.0),
+        TimeFrame.TwoHour => (int)Math.Ceiling(25/8.0),
+        TimeFrame.FourHour => (int)Math.Ceiling(25/16.0),
         TimeFrame.Day => 1,
         TimeFrame.Week => 0,
         TimeFrame.Month => 0,
@@ -326,7 +326,7 @@ namespace TradingApp.Shared.Services
     }
     public static void GetToken(string symbol, out int token)
     {
-      if (!AppConstants.StockLookUP.TryGetValue(symbol, out var tokenValue))
+      if (AppConstants.StockLookUP.TryGetValue(symbol, out var tokenValue))
       {
         if (!int.TryParse(tokenValue, out token))
         {
