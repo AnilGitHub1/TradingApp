@@ -74,6 +74,13 @@ namespace TradingApp.Processor.Workers
             var allFetched = new List<TradingApp.Core.Contracts.FetchResult<DailyTF>>();
             foreach (var s in symbols)
             {
+                var tfs = Utility.GetAllTimeframes();
+                if (!tfs.Any(tf => tf.ToString() == timeframe))
+                {
+                  _logger.LogWarning("Timeframe {timeframe} not recognized. Skipping symbol {symbol}.", timeframe, s);
+                  continue;
+                }
+
                 ct.ThrowIfCancellationRequested();
 
                 // Choose provider per config or per-symbol if you want

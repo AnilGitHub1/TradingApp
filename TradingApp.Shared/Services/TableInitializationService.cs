@@ -79,10 +79,12 @@ namespace TradingApp.Shared.Services
     private async Task InitializeDailyTableAsync(string tableNameHint, CancellationToken ct)
     {
       // implement as needed
+      await Task.CompletedTask;
     }
     private async Task InitializeFifteenTableAsync(string tableNameHint, CancellationToken ct)
     {
       // implement as needed
+      await Task.CompletedTask;
     }
 
     /// <summary>
@@ -171,10 +173,12 @@ namespace TradingApp.Shared.Services
     private async Task InitializeHighLowTableAsync(string tableNameHint, CancellationToken ct)
     {
       // implement as needed
+      await Task.CompletedTask;
     }
     private async Task InitializeSimulationTableAsync(string tableNameHint, CancellationToken ct)
     {
       // implement as needed
+      await Task.CompletedTask;
     }
     /// <summary>
     /// Special handling for the Trade table: if the DbSet isn't present we explicitly instruct the developer to add the entity
@@ -197,6 +201,7 @@ namespace TradingApp.Shared.Services
                            "If you want me to generate a sample Trade entity and the corresponding DbSet property, tell me the columns you need and I can prepare code for you.");
         return;
       }
+      await Task.CompletedTask;
     }
   }
 }

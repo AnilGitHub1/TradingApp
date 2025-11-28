@@ -46,17 +46,26 @@ namespace TradingApp.Shared.ExternalApis
           var low = el.GetProperty("low").GetDouble();
           var close = el.GetProperty("close").GetDouble();
           var volume = el.GetProperty("volume").GetDouble();
-          var args = new object[]
+          var candle = new object[]
           {
             token,
-            time = el.GetProperty("timestamp").GetDateTime(),
-            open = el.GetProperty("open").GetDouble(),
-            high = el.GetProperty("timestamp").GetDouble(),
-            low = el.GetProperty("timestamp").GetDouble(),
-            close = el.GetProperty("timestamp").GetDouble(),
-            volume = el.GetProperty("timestamp").GetDouble()
+            time,
+            open,
+            high,
+            low,
+            close,
+            (int)volume
           };
-          list.Add((T)Activator.CreateInstance(typeof(T), args));
+          var obj = Activator.CreateInstance(typeof(T), candle);
+
+          if (obj is T item)
+          {
+            list.Add(item);
+          }
+          else
+          {
+            throw new InvalidOperationException($"Type {typeof(T)} must have a constructor accepting candle data.");
+          }
         }
 
         return new FetchResult<T>(list);
@@ -93,17 +102,26 @@ namespace TradingApp.Shared.ExternalApis
           var low = el.GetProperty("low").GetDouble();
           var close = el.GetProperty("close").GetDouble();
           var volume = el.GetProperty("volume").GetDouble();
-          var args = new object[]
+          var candle = new object[]
           {
             token,
-            time = el.GetProperty("timestamp").GetDateTime(),
-            open = el.GetProperty("open").GetDouble(),
-            high = el.GetProperty("timestamp").GetDouble(),
-            low = el.GetProperty("timestamp").GetDouble(),
-            close = el.GetProperty("timestamp").GetDouble(),
-            volume = el.GetProperty("timestamp").GetDouble()
+            time,
+            open,
+            high,
+            low,
+            close,
+            (int)volume
           };
-          list.Add((T)Activator.CreateInstance(typeof(T), args));
+          var obj = Activator.CreateInstance(typeof(T), candle);
+
+          if (obj is T item)
+          {
+            list.Add(item);
+          }
+          else
+          {
+            throw new InvalidOperationException($"Type {typeof(T)} must have a constructor accepting candle data.");
+          }
         }
 
         return new FetchResult<T>(list);
@@ -139,17 +157,26 @@ namespace TradingApp.Shared.ExternalApis
           var low = el.GetProperty("low").GetDouble();
           var close = el.GetProperty("close").GetDouble();
           var volume = el.GetProperty("volume").GetDouble();
-          var args = new object[]
+          var candle = new object[]
           {
             token,
-            time = el.GetProperty("timestamp").GetDateTime(),
-            open = el.GetProperty("open").GetDouble(),
-            high = el.GetProperty("timestamp").GetDouble(),
-            low = el.GetProperty("timestamp").GetDouble(),
-            close = el.GetProperty("timestamp").GetDouble(),
-            volume = el.GetProperty("timestamp").GetDouble()
+            time,
+            open,
+            high,
+            low,
+            close,
+            (int)volume
           };
-          list.Add((T)Activator.CreateInstance(typeof(T), args));
+          var obj = Activator.CreateInstance(typeof(T), candle);
+
+          if (obj is T item)
+          {
+            list.Add(item);
+          }
+          else
+          {
+            throw new InvalidOperationException($"Type {typeof(T)} must have a constructor accepting candle data.");
+          }
         }
 
         return new FetchResult<T>(list);
@@ -186,17 +213,26 @@ namespace TradingApp.Shared.ExternalApis
           var low = el.GetProperty("low").GetDouble();
           var close = el.GetProperty("close").GetDouble();
           var volume = el.GetProperty("volume").GetDouble();
-          var args = new object[]
+          var candle = new object[]
           {
             token,
-            time = el.GetProperty("timestamp").GetDateTime(),
-            open = el.GetProperty("open").GetDouble(),
-            high = el.GetProperty("timestamp").GetDouble(),
-            low = el.GetProperty("timestamp").GetDouble(),
-            close = el.GetProperty("timestamp").GetDouble(),
-            volume = el.GetProperty("timestamp").GetDouble()
+            time,
+            open,
+            high,
+            low,
+            close,
+            (int)volume
           };
-          list.Add((T)Activator.CreateInstance(typeof(T), args));
+          var obj = Activator.CreateInstance(typeof(T), candle);
+
+          if (obj is T item)
+          {
+            list.Add(item);
+          }
+          else
+          {
+            throw new InvalidOperationException($"Type {typeof(T)} must have a constructor accepting candle data.");
+          }
         }
 
         return new FetchResult<T>(list);
@@ -233,17 +269,26 @@ namespace TradingApp.Shared.ExternalApis
                   var low = el.GetProperty("low").GetDouble();
                   var close = el.GetProperty("close").GetDouble();
                   var volume = el.GetProperty("volume").GetDouble();
-                  var args = new object[]
-                  {
-                    token,
-                    time = el.GetProperty("timestamp").GetDateTime(),
-                    open = el.GetProperty("open").GetDouble(),
-                    high = el.GetProperty("timestamp").GetDouble(),
-                    low = el.GetProperty("timestamp").GetDouble(),
-                    close = el.GetProperty("timestamp").GetDouble(),
-                    volume = el.GetProperty("timestamp").GetDouble()
-                  };
-                  list.Add((T)Activator.CreateInstance(typeof(T), args));
+                  var candle = new object[]
+          {
+            token,
+            time,
+            open,
+            high,
+            low,
+            close,
+            (int)volume
+          };
+          var obj = Activator.CreateInstance(typeof(T), candle);
+
+          if (obj is T item)
+          {
+            list.Add(item);
+          }
+          else
+          {
+            throw new InvalidOperationException($"Type {typeof(T)} must have a constructor accepting candle data.");
+          }
                 }
 
                 return new FetchResult<T>(list);
@@ -280,17 +325,26 @@ namespace TradingApp.Shared.ExternalApis
                   var low = el.GetProperty("low").GetDouble();
                   var close = el.GetProperty("close").GetDouble();
                   var volume = el.GetProperty("volume").GetDouble();
-                  var args = new object[]
-                  {
-                    token,
-                    time = el.GetProperty("timestamp").GetDateTime(),
-                    open = el.GetProperty("open").GetDouble(),
-                    high = el.GetProperty("timestamp").GetDouble(),
-                    low = el.GetProperty("timestamp").GetDouble(),
-                    close = el.GetProperty("timestamp").GetDouble(),
-                    volume = el.GetProperty("timestamp").GetDouble()
-                  };
-                  list.Add((T)Activator.CreateInstance(typeof(T), args));
+                  var candle = new object[]
+          {
+            token,
+            time,
+            open,
+            high,
+            low,
+            close,
+            (int)volume
+          };
+          var obj = Activator.CreateInstance(typeof(T), candle);
+
+          if (obj is T item)
+          {
+            list.Add(item);
+          }
+          else
+          {
+            throw new InvalidOperationException($"Type {typeof(T)} must have a constructor accepting candle data.");
+          }
                 }
 
                 return new FetchResult<T>(list);

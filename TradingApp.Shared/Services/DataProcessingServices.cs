@@ -48,7 +48,7 @@ namespace TradingApp.Shared.Services
         foreach (var tf in timeFrames)
         {
           var analysisStartTime = await GetProcessingStartTime(token, tf);
-          candles = await Utility.GetCandles(token, tf, candles, _dailyTF, _fifteenTF, analysisStartTime);
+          candles = await Utility.GetCandles(token, tf, candles?? new List<Candle>(), _dailyTF, _fifteenTF, analysisStartTime);
           if(candles == null || candles.Count() < 6)
           {
             _logger.LogInformation("No candles found for symbol: {Symbol}, timeframe: {TimeFrame}", symbol, tf);

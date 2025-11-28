@@ -124,7 +124,16 @@ namespace TradingApp.Shared.ExternalApis
             data.c[i],
             (int)data.v[i]
           };
-          candles.Add((T)Activator.CreateInstance(typeof(T), candle));
+          var obj = Activator.CreateInstance(typeof(T), candle);
+
+          if (obj is T item)
+          {
+            candles.Add(item);
+          }
+          else
+          {
+            throw new InvalidOperationException($"Type {typeof(T)} must have a constructor accepting candle data.");
+          }
         }
       }
 
