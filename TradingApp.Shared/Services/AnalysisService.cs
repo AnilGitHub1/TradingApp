@@ -46,13 +46,19 @@ namespace TradingApp.Shared.Services
           continue;
         }
         if (ct.IsCancellationRequested) break;
-        _logger.LogInformation("Processing data for symbol: {Symbol}", symbol);
-        IEnumerable<Candle> candles = [];
-        IList<HighLow> highLows = await GetHighLows(token);
+        _logger.LogInformation("Analysing stock: {Symbol}", symbol);
+        IEnumerable<Candle> candles = new List<Candle>();            
+        IList<HighLow> highLows = new List<HighLow>();
+
         foreach (var tf in timeFrames)
         {
-          _logger.LogInformation("Processing symbol: {Symbol} for timeframe: {TimeFrame}", symbol, tf);
-          candles = await GetCandles(token, tf, candles, ct);
+          _logger.LogInformation("Analysing symbol: {Symbol} for timeframe: {TimeFrame}", symbol, tf);
+          DateTime from = Utility.GetStartTimeOfCandlesForAnalysis(tf);
+          if(tf == TimeFrame.FifteenMinute || tf == TimeFrame.Day)
+          { 
+            highLows = await Utility.GetHighLows(token, tf, _highLowRepo, from);
+          }
+          candles = await Utility.GetCandles(token, tf, candles, _dailyTF, _fifteenTF, from);
           var highLowCandles = GetHighLowCandles(candles, highLows, tf, HighLowType.High);
           var highsForDownTrendLines = GetHighsForDownTrendLines(highLowCandles, candles, HighLowType.High);
           GetTrendLinesForTimeFrame(candles, highsForDownTrendLines, tf, results);
@@ -61,24 +67,7 @@ namespace TradingApp.Shared.Services
       }
       if (results.Trendlines.Count > 0)
         await _trendlineRepo.AddTrendlineAsync(results.Trendlines.ToList());
-    }
-    private async Task<IEnumerable<Candle>> GetCandles(int token, TimeFrame tf, IEnumerable<Candle> prevCandles, CancellationToken ct)
-    {
-      if (ct.IsCancellationRequested) return [];
-      if (tf == TimeFrame.FifteenMinute || tf == TimeFrame.Day)
-      {
-        return await Utility.GetCandlesFromDB(token, tf, _dailyTF, _fifteenTF);
-      }
-      else
-      {
-        var resampledCandles = Utility.Resample(tf, prevCandles);
-        return resampledCandles;
-      }
-    }
-    private async Task<IList<HighLow>> GetHighLows(int token, DateTime from = default)
-    {
-      return await _highLowRepo.GetAllHighLowAsync(token, from);
-    }
+    }   
     public IList<int> GetHighLowCandles(IEnumerable<Candle> candles, IList<HighLow> highLows, TimeFrame tf, HighLowType hl)
     {
       if (candles == null || !candles.Any() || highLows == null || !highLows.Any())
@@ -87,9 +76,14 @@ namespace TradingApp.Shared.Services
       var highLowCandles = new List<int>();
       string hlStr = hl == HighLowType.High ? "h" : "l";
       string tfStr = EnumMapper.GetTimeFrame(tf);
-      var highLowSet = new HashSet<DateTime>(highLows.Where(x => x.hl.Contains(hlStr))
-      .Where(x => x.tf.Contains(tfStr))
-      .Select(x => x.time));
+      var highLowSet = new HashSet<DateTime>();
+      for(int i = 0; i< highLows.Count; i++)
+      {
+        if(highLows[i].tf.Contains(tfStr) && highLows[i].hl.Contains(hlStr))
+        {
+          highLowSet.Add(highLows[i].time);
+        }
+      }
       int index = 0;
       foreach (var candle in candles)
       {
@@ -129,7 +123,6 @@ namespace TradingApp.Shared.Services
       result.Reverse();
       return result;
     }
-
     private void GetTrendLinesForTimeFrame(IEnumerable<Candle> candles, IList<int> highLows, TimeFrame tf, AnalysisResult results)
     {
       var triplets = GetFirstOrderTrendlines(candles, highLows);
@@ -353,8 +346,6 @@ namespace TradingApp.Shared.Services
 
         return levels;
     }
-
     private static string KeyOf(int[] arr) => string.Join('#', arr);
-    
   }
 }

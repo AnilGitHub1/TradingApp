@@ -10,6 +10,7 @@ namespace TradingApp.Core.Interfaces
     Task<IList<HighLow>> GetAllHighLowAsync(int token);
     Task<IList<HighLow>> GetAllHighLowAsync(int token, DateTime from);
     Task<IList<HighLow>> GetAllHighLowAsync(int token, DateTime from, DateTime to);
+    Task<IList<HighLow>> GetAllHighLowAsync(int token, DateTime from, bool isLowerTimeFrames);
     Task<HighLow?> GetLatestHighLowAsync(int token);
     Task<HighLow?> GetLatestHighLowAsync(int token, string tf);
     Task AddHighLowAsync(HighLow HighLow);

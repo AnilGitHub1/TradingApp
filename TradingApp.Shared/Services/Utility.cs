@@ -7,10 +7,36 @@ namespace TradingApp.Shared.Services
   public static class Utility
   {
     private const double MAX_NUM = double.MaxValue;
+    public static async Task<IList<HighLow>> GetHighLows(int token, TimeFrame tf, IHighLowRepository highLowRepo, DateTime from = default)
+    {
+      return await highLowRepo.GetAllHighLowAsync(token, from, tf <= TimeFrame.FourHour);
+    }
+    public static async Task<IEnumerable<Candle>> GetCandles(int token, TimeFrame tf, IEnumerable<Candle> prevCandles,
+    IDailyTFRepository dailyTF, IFifteenTFRepository fifteenTF, DateTime from = default)
+    {
+      if( from != default)
+      {
+        if(tf == TimeFrame.FifteenMinute)
+        {
+          from = from.AddMonths(-1);
+        }
+        else if(tf == TimeFrame.Day)
+        {
+          from = from.AddMonths(-11);
+        }
+      }
+      if (tf == TimeFrame.FifteenMinute || tf == TimeFrame.Day)
+      {
+        return await GetCandlesFromDB(token, tf, dailyTF, fifteenTF, from);
+      }
+      else
+      {
+        var resampledCandles = Resample(tf, prevCandles);
+        return resampledCandles;
+      }
+    }
     public static async Task<IEnumerable<Candle>> GetCandlesFromDB(int token, TimeFrame tf,
-     IDailyTFRepository _dailyTF,
-     IFifteenTFRepository _fifteenTF,
-     DateTime from = default) {
+     IDailyTFRepository _dailyTF, IFifteenTFRepository _fifteenTF, DateTime from = default) {
       if (tf <= TimeFrame.FourHour)
         return await _fifteenTF.GetAllFifteenTFAsync(token, from);
       return await _dailyTF.GetAllDailyTFAsync(token, from);
@@ -108,7 +134,7 @@ namespace TradingApp.Shared.Services
         default:
           return currentTime.AddDays(1);
       }
-    }
+    }    
     public static DateTime GetInitialTimeResample(DateTime currentTime, TimeFrame timeFrame)
     {
       // Assume trading day starts at 09:15 like in your Python version
@@ -247,7 +273,7 @@ namespace TradingApp.Shared.Services
           return t.AddDays(-(28 * 7));   // 28 weeks
 
         case TimeFrame.FourHour:
-          return new DateTime(t.Year, t.Month, t.Day).AddYears(-1);
+          return new DateTime(t.Year, t.Month, t.Day).AddMonths(-6);
 
         case TimeFrame.Day:
           return new DateTime(t.Year, t.Month, t.Day).AddYears(-2);
@@ -260,6 +286,26 @@ namespace TradingApp.Shared.Services
             return t;
       }
     }
+    public static DateTime GetStartTimeOfCandlesForAnalysis(TimeFrame timeFrame, DateTime? time = null)
+    {
+      DateTime t = time ?? DateTime.Now;
+
+      switch (timeFrame)
+      {
+        case TimeFrame.FifteenMinute:
+        case TimeFrame.ThirtyMinute:
+        case TimeFrame.OneHour:
+        case TimeFrame.TwoHour:
+        case TimeFrame.FourHour:
+          return new DateTime(t.Year, t.Month, t.Day).AddMonths(-7);
+        case TimeFrame.Day:
+        case TimeFrame.Week:
+        case TimeFrame.Month:
+          return new DateTime(t.Year, t.Month, t.Day).AddYears(-20);
+        default:
+            return t;
+      }
+    }    
     public static TimeFrame GetBaseTimeFrame(TimeFrame tf)
     {
       if (tf <= TimeFrame.FourHour)

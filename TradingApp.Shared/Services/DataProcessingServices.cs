@@ -43,12 +43,12 @@ namespace TradingApp.Shared.Services
         }
         if (ct.IsCancellationRequested) break;
         _logger.LogInformation("highlow data Processing for symbol: {Symbol}", symbol);
-        IEnumerable<Candle> candles = [];
+        IEnumerable<Candle> candles = new List<Candle>();
         var startTime = DateTime.MinValue;
         foreach (var tf in timeFrames)
         {
           var analysisStartTime = await GetProcessingStartTime(token, tf);
-          candles = await GetCandles(token, tf, candles, analysisStartTime, ct);
+          candles = await Utility.GetCandles(token, tf, candles, _dailyTF, _fifteenTF, analysisStartTime);
           if(candles == null || candles.Count() < 6)
           {
             _logger.LogInformation("No candles found for symbol: {Symbol}, timeframe: {TimeFrame}", symbol, tf);
@@ -78,21 +78,7 @@ namespace TradingApp.Shared.Services
         _logger.LogInformation("Completed highlow data processing for symbol: {Symbol}", symbol);
       }
       _logger.LogInformation("DataProcessingService completed...");
-    }
-    private async Task<IEnumerable<Candle>> GetCandles(int token, TimeFrame tf, IEnumerable<Candle> prevCandles, DateTime from, CancellationToken ct)
-    {
-      if (ct.IsCancellationRequested) return [];
-      if( from == default) from = from.AddYears(12);
-      if (tf == TimeFrame.FifteenMinute || tf == TimeFrame.Day)
-      {
-        return await Utility.GetCandlesFromDB(token, tf, _dailyTF, _fifteenTF, tf == TimeFrame.FifteenMinute ? from.AddMonths(-1): from.AddMonths(-10));
-      }
-      else
-      {
-        var resampledCandles = Utility.Resample(tf, prevCandles);
-        return resampledCandles;
-      }
-    }
+    }    
     private static void GetHighLowsForTimeFrame(IEnumerable<Candle> candles, TimeFrame tf, HighLowType mode, SortedDictionary<DateTime, HighLow> results)
     {
       string tfStr = EnumMapper.GetTimeFrame(tf);

@@ -62,7 +62,21 @@ namespace TradingApp.Infrastructure.Repositories
             .OrderBy(x => x.time)
             .ToListAsync();
     }
+    public async Task<IList<HighLow>> GetAllHighLowAsync(int token, DateTime from, bool isLowerTimeFrames)
+    {
+      return isLowerTimeFrames?
+         await Context.HighLow
+            .AsNoTracking()
+            .Where(x => x.token == token && x.time >= from && x.time != x.time.Date)
+            .OrderBy(x => x.time)
+            .ToListAsync():
+             await Context.HighLow
+            .AsNoTracking()
+            .Where(x => x.token == token && x.time >= from && x.time == x.time.Date)
+            .OrderBy(x => x.time)
+            .ToListAsync();
 
+    }
     public async Task<HighLow?> GetLatestHighLowAsync(int token)
     {
       return await Context.HighLow
