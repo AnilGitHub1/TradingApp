@@ -204,28 +204,28 @@ namespace TradingApp.Shared.Services
     {
       if (hl == HighLowType.High)
       {
-        double c3HighVal = Math.Max(c3.open, c3.close);
-        double c1HighVal = Math.Max(c1.open, c1.close);
+        double c3BodyHigh = Math.Max(c3.open, c3.close);
+        double c1BodyHigh = Math.Max(c1.open, c1.close);
 
         // Check upper bound
-        if (c3HighVal > slopeRange.Max * dx + c1HighVal)
+        if (c3BodyHigh > slopeRange.Max * dx + c1BodyHigh)
           return false;
 
         // Check lower bound
-        if (c3HighVal < slopeRange.Min * dx + c1HighVal)
+        if (c3.high < slopeRange.Min * dx + c1.high)
           return false;
       }
       else if (hl == HighLowType.Low)
       {
-        double c3LowVal = Math.Min(c3.open, c3.close);
-        double c1LowVal = Math.Min(c1.open, c1.close);
+        double c3BodyLow = Math.Min(c3.open, c3.close);
+        double c1BodyLow = Math.Min(c1.open, c1.close);
 
         // Check lower bound
-        if (c3LowVal > slopeRange.Max * dx + c1LowVal)
+        if (c3.low > slopeRange.Max * dx + c1.low)
           return false;
 
         // Check upper bound
-        if (c3LowVal < slopeRange.Min * dx + c1LowVal)
+        if (c3BodyLow < slopeRange.Min * dx + c1BodyLow)
           return false;
       }
 
@@ -237,16 +237,16 @@ namespace TradingApp.Shared.Services
       {
         return new SlopeRange
         (
-                (c2.high - Math.Max(c1.open, c1.close)) / (c2Index - c1Index),
-                (c1.high - Math.Max(c2.open, c2.close)) / (c1Index - c2Index)
+          (c1.high - Math.Max(c2.open, c2.close)) / (c1Index - c2Index),
+          (c2.high - Math.Max(c1.open, c1.close)) / (c2Index - c1Index)
         );
       }
       else // 
       {
         return new SlopeRange
         (
-                (c1.low - Math.Min(c2.open, c2.close)) / (c1Index - c2Index),
-                (c2.low - Math.Min(c1.open, c1.close)) / (c2Index - c1Index)
+          (c1.low - Math.Min(c2.open, c2.close)) / (c1Index - c2Index),
+          (c2.low - Math.Min(c1.open, c1.close)) / (c2Index - c1Index)
         );
       }
     } 
