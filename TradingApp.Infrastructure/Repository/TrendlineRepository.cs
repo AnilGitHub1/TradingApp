@@ -84,7 +84,58 @@ namespace TradingApp.Infrastructure.Repositories
     {
       Context.Trendline.Update(Trendline);
       await Context.SaveChangesAsync();
-    }      
+    }   
+
+    public async Task UpdateTrendlinesAsync(List<Trendline> newList)
+{
+    foreach (var incoming in newList)
+    {
+        // Find the single row that matches this token-tf-hl
+        var existing = await Context.Trendline
+            .FirstOrDefaultAsync(t =>
+                t.token == incoming.token &&
+                t.tf == incoming.tf &&
+                t.hl == incoming.hl);
+
+        if (existing == null)
+        {
+            // This should never happen because you pre-created rows.
+            // But if missing, create it safely.
+            await Context.Trendline.AddAsync(incoming);
+            continue;
+        }
+
+        // Check if any of the values actually changed
+        bool changed =
+            existing.starttime != incoming.starttime ||
+            existing.endtime != incoming.endtime ||
+            existing.slope != incoming.slope ||
+            existing.intercept != incoming.intercept ||
+            existing.index != incoming.index ||
+            existing.index1 != incoming.index1 ||
+            existing.index2 != incoming.index2 ||
+            existing.connects != incoming.connects ||
+            existing.totalconnects != incoming.totalconnects;
+
+        if (changed)
+        {
+            // Update only the changed properties
+            existing.starttime = incoming.starttime;
+            existing.endtime = incoming.endtime;
+            existing.slope = incoming.slope;
+            existing.intercept = incoming.intercept;
+
+            existing.index = incoming.index;
+            existing.index1 = incoming.index1;
+            existing.index2 = incoming.index2;
+            existing.connects = incoming.connects;
+            existing.totalconnects = incoming.totalconnects;
+        }
+    }
+
+    await Context.SaveChangesAsync();
+}
+    
 
     public async Task DeleteTrendlineAsync(int id)
     {
