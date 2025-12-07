@@ -54,7 +54,7 @@ namespace TradingApp.Shared.Services
             _logger.LogInformation("No candles found for symbol: {Symbol}, timeframe: {TimeFrame}", symbol, tf);
             continue;
           }
-          var analysisCandles = new List<Candle>(candles.Count() - Window);
+          var analysisCandles = new List<Candle>(candles.Count());
           if (analysisStartTime == default)
           {
             analysisCandles = candles.ToList();
@@ -62,9 +62,9 @@ namespace TradingApp.Shared.Services
           else
           {
             bool startFound = false;
-            for (int i = 0; i < candles.Count() - Window; i++)
+            for (int i = 0; i < candles.Count(); i++)
             {
-              if (startFound || candles.ElementAt(i + Window).time > analysisStartTime)
+              if (startFound || ( i+Window < candles.Count() && candles.ElementAt(i + Window).time > analysisStartTime))
               {
                 startFound = true;
                 analysisCandles.Add(candles.ElementAt(i));

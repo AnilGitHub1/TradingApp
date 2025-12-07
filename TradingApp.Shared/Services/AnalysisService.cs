@@ -339,6 +339,7 @@ namespace TradingApp.Shared.Services
             if (nextOrder == null || nextOrder.Count == 0) break;
             k++;
             levels[k] = nextOrder;
+            maxK = k;
             // prepare for next iteration
             prevOrder = nextOrder;
             prevHash = new HashSet<string>(prevOrder.Select(KeyOf));
