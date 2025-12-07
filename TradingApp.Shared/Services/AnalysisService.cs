@@ -19,6 +19,7 @@ namespace TradingApp.Shared.Services
     private readonly IHighLowRepository _highLowRepo;
     private readonly ITrendlineRepository _trendlineRepo;
     private readonly ILogger<AnalysisService> _logger;
+    private int CurrentToken;
 
     public AnalysisService(IDailyTFRepository dailyTF, IFifteenTFRepository fifteenTF,
     RunConfig cfg, ITrendlineRepository trendlineRepo, IHighLowRepository highLowRepo, ILogger<AnalysisService> logger)
@@ -45,6 +46,7 @@ namespace TradingApp.Shared.Services
           _logger.LogWarning("Token not found for symbol {Symbol}. Skipping.", symbol);
           continue;
         }
+        CurrentToken = token;
         if (ct.IsCancellationRequested) break;
         _logger.LogInformation("Analysing stock: {Symbol}", symbol);
         IEnumerable<Candle> candles = new List<Candle>();            
@@ -66,7 +68,7 @@ namespace TradingApp.Shared.Services
         _logger.LogInformation("Completed processing for symbol: {Symbol}", symbol);
       }
       if (results.Trendlines.Count > 0)
-        await _trendlineRepo.AddTrendlineAsync(results.Trendlines.ToList());
+        await _trendlineRepo.UpdateTrendlinesAsync(results.Trendlines.ToList());
     }   
     public IList<int> GetHighLowCandles(IEnumerable<Candle> candles, IList<HighLow> highLows, TimeFrame tf, HighLowType hl)
     {
@@ -128,15 +130,15 @@ namespace TradingApp.Shared.Services
       var triplets = GetFirstOrderTrendlines(candles, highLows);
       var allOrders = FindAllOrdersTrendlinesApriori(triplets, out int maxK, parallelVerify: true);
       var maxorders = allOrders[maxK];
-      Trendline trendline = Trendline.EmptyTrendline();
       string tfStr = EnumMapper.GetTimeFrame(tf);
       foreach (var order in maxorders)
       {
-        trendline = CreateModelAndSolve(candles, order);
+        Trendline trendline = CreateModelAndSolve(candles, order);
         if (trendline.slope == 0.0 && trendline.intercept == 0.0)
           continue;
         else
         {
+          trendline.token = CurrentToken;
           trendline.tf = tfStr;
           results.Trendlines.Add(trendline);
           break;

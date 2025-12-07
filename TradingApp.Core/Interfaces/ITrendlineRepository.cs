@@ -13,6 +13,7 @@ namespace TradingApp.Core.Interfaces
         Task AddTrendlineAsync(Trendline Trendline);
         Task AddTrendlineAsync(IList<Trendline> Trendline);
         Task UpdateTrendlineAsync(Trendline Trendline);
+        Task UpdateTrendlinesAsync(List<Trendline> Trendlines);
         Task DeleteTrendlineAsync(int id);
         Task DeleteTrendlineAsync(Trendline entity);
         Task<int> DeleteTrendlineDataAsync(int token);
