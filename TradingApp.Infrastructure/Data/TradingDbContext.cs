@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TradingApp.Core.Entities;
 
 namespace TradingApp.Infrastructure.Data
@@ -41,6 +42,19 @@ namespace TradingApp.Infrastructure.Data
             {
                 entity.ToTable("trendline_data");
                 entity.HasKey(e => e.id);
+                var unspecified = new ValueConverter<DateTime, DateTime>(
+                    v => DateTime.SpecifyKind(v, DateTimeKind.Unspecified),
+                    v => DateTime.SpecifyKind(v, DateTimeKind.Unspecified)
+                );
+
+
+                entity.Property(e => e.starttime)
+                    .HasColumnType("timestamp without time zone")
+                    .HasConversion(unspecified);
+
+                entity.Property(e => e.endtime)
+                    .HasColumnType("timestamp without time zone")
+                    .HasConversion(unspecified);
             });
 
             OnModelCreatingPartial(modelBuilder);

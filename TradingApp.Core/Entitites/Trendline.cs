@@ -41,8 +41,8 @@ namespace TradingApp.Core.Entities
     {
       return new Trendline(
           token: -1,
-          starttime: DateTime.UtcNow,
-          endtime: DateTime.UtcNow,
+          starttime: DateTime.Now,
+          endtime: DateTime.Now,
           slope: 0.0,
           intercept: 0.0,
           hl: "",
@@ -58,8 +58,8 @@ namespace TradingApp.Core.Entities
     {
       return new Trendline(
           token: -1,
-          starttime: DateTime.UtcNow,
-          endtime: DateTime.UtcNow,
+          starttime: DateTime.Now,
+          endtime: DateTime.Now,
           slope: 0.0,
           intercept: 0.0,
           hl: "h",
@@ -75,8 +75,8 @@ namespace TradingApp.Core.Entities
     {
       return new Trendline(
           token: -1,
-          starttime: DateTime.UtcNow,
-          endtime: DateTime.UtcNow,
+          starttime: DateTime.Now,
+          endtime: DateTime.Now,
           slope: 0.0,
           intercept: 0.0,
           hl: "l",

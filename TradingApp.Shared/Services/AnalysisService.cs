@@ -128,6 +128,7 @@ namespace TradingApp.Shared.Services
     private void GetTrendLinesForTimeFrame(IEnumerable<Candle> candles, IList<int> highLows, TimeFrame tf, AnalysisResult results)
     {
       var triplets = GetFirstOrderTrendlines(candles, highLows);
+      if(triplets.Count() == 0) return;
       var allOrders = FindAllOrdersTrendlinesApriori(triplets, out int maxK, parallelVerify: true);
       var maxorders = allOrders[maxK];
       string tfStr = EnumMapper.GetTimeFrame(tf);

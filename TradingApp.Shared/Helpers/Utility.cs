@@ -332,9 +332,9 @@ namespace TradingApp.Shared.Services
       {
         "15m",
         "30m",
-        "1h",
-        "2h",
-        "4h",
+        "1H",
+        "2H",
+        "4H",
         "1D",
         "1W",
         "1M"
