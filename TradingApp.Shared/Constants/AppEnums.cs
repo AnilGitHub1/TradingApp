@@ -1,5 +1,11 @@
 namespace TradingApp.Shared.Constants
 {
+  public enum AnalysisAlgoType
+  {
+    Apriori,
+    HyperClique,
+    HyperCliqueMaxOnly
+  }
   public enum FetchClient
   {
     Dhan,
@@ -44,6 +50,36 @@ namespace TradingApp.Shared.Constants
   
   public static class EnumMapper
   {
+    public static string GetAnalysisAlgoType(AnalysisAlgoType type)
+    {
+      switch (type)
+      {
+        case AnalysisAlgoType.Apriori:
+          return "Apriori";
+        case AnalysisAlgoType.HyperClique:
+          return "HyperClique";
+        case AnalysisAlgoType.HyperCliqueMaxOnly:
+          return "HyperCliqueMaxOnly";
+        default:
+          return "HyperClique";
+      }
+    }
+    public static AnalysisAlgoType GetAnalysisAlgoType(string type)
+    {
+      type = type.ToLower();
+      type = type.Replace(" ","");
+      switch (type)
+      {
+        case "apriori":
+          return AnalysisAlgoType.Apriori;
+        case "hypercliquemaxonly":
+          return AnalysisAlgoType.HyperCliqueMaxOnly;
+        case "hyperclique":
+          return AnalysisAlgoType.HyperClique;
+        default:
+          return AnalysisAlgoType.HyperCliqueMaxOnly;
+      }
+    }
     public static string GetTimeFrame(TimeFrame tf)
     {
       switch (tf)

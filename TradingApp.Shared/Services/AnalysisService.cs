@@ -6,6 +6,7 @@ using TradingApp.Shared.Constants;
 using TradingApp.Core.Entities;
 using System.Collections.Concurrent;
 using OR;
+using TradingApp.Shared.Helpers;
 
 namespace TradingApp.Shared.Services
 {
@@ -18,6 +19,8 @@ namespace TradingApp.Shared.Services
     private readonly List<string> _symbols;
     private readonly IHighLowRepository _highLowRepo;
     private readonly ITrendlineRepository _trendlineRepo;
+    private readonly HyperCliqueFinder _hyperCliqueFinder;
+    private readonly Apriori _apriori;
     private readonly ILogger<AnalysisService> _logger;
     private int CurrentToken;
 
@@ -30,6 +33,8 @@ namespace TradingApp.Shared.Services
       _symbols = cfg.DebugOptions.Symbols;
       _highLowRepo = highLowRepo;
       _trendlineRepo = trendlineRepo;
+      _hyperCliqueFinder = new HyperCliqueFinder();
+      _apriori = new Apriori();
       _logger = logger;
     }
 
@@ -128,12 +133,18 @@ namespace TradingApp.Shared.Services
     private void GetTrendLinesForTimeFrame(IEnumerable<Candle> candles, IList<int> highLows, TimeFrame tf, AnalysisResult results)
     {
       var triplets = GetFirstOrderTrendlines(candles, highLows);
-      if(triplets.Count() == 0) return;
-      var allOrders = FindAllOrdersTrendlinesApriori(triplets, out int maxK, parallelVerify: true);
+      if(triplets.Count() == 0) {
+        _logger.LogInformation("no Triplets...");
+        return;
+      }
+      if(_cfg.PrintTriplets) PrintAllTriplets(triplets);
+      var allOrders = FindAllOrders(triplets, out var maxK);
       var maxorders = allOrders[maxK];
+      if(_cfg.PrintResults) PrintResults(maxorders);
       string tfStr = EnumMapper.GetTimeFrame(tf);
       foreach (var order in maxorders)
       {
+
         Trendline trendline = CreateModelAndSolve(candles, order);
         if (trendline.slope == 0.0 && trendline.intercept == 0.0)
           continue;
@@ -144,6 +155,23 @@ namespace TradingApp.Shared.Services
           results.Trendlines.Add(trendline);
           break;
         }
+      }
+    }
+    private Dictionary<int,List<int[]>> FindAllOrders(List<int[]> triplets, out int maxK)
+    {
+      var allOrders = new Dictionary<int, List<int[]>>();
+      maxK = 3;
+      switch (_cfg.AlgoType)
+      {
+        case AnalysisAlgoType.Apriori:
+          return _apriori.FindAllOrdersTrendlinesApriori(triplets, out maxK, parallelVerify: true);
+        case AnalysisAlgoType.HyperClique:
+          return _hyperCliqueFinder.FindAllLevelsFromTriplets(triplets, out  maxK);
+        case AnalysisAlgoType.HyperCliqueMaxOnly:
+          return _hyperCliqueFinder.FindAllLevelsFromTriplets(triplets, out  maxK, true);
+        default:
+          allOrders.Add(3, new List<int[]>());
+          return allOrders;
       }
     }
     private Trendline CreateModelAndSolve(IEnumerable<Candle> candles, IList<int> highs)
@@ -242,114 +270,23 @@ namespace TradingApp.Shared.Services
 
       return triplets;
     }
-    // Given prevOrder (sorted int[] lists) and prevHash (keys), produce next-level sets (k = prevK+1)
-    // parallelVerify: if true, candidate verification runs in parallel
-    private List<int[]> GenerateNextOrderTrendlines(List<int[]> prevOrder, HashSet<string> prevHash, bool parallelVerify)
+    private void PrintAllTriplets(List<int[]> triplets)
     {
-        int prevK = prevOrder.Count > 0 ? prevOrder[0].Length : 0;
-        if (prevK < 1) return new List<int[]>();
-        int nextK = prevK + 1;
-        var groups = new Dictionary<string, List<int[]>>();
-        // Group by first (k-2) elements (for prevK==3, k-2 = 1)
-        int prefixLen = prevK - 1; // k-2
-        foreach (var s in prevOrder)
-        {
-            var prefix = string.Join('#', s.Take(prefixLen));
-            if (!groups.TryGetValue(prefix, out var list)) { list = new List<int[]>(); groups[prefix] = list; }
-            list.Add(s);
-        }
-
-        // Generate candidate keys (dedupe with HashSet)
-        var candidateKeys = new HashSet<string>();
-        var candidates = new List<int[]>();
-
-        foreach (var kv in groups)
-        {
-            var list = kv.Value;
-            int m = list.Count;
-            // pairwise combine list items: they share first (k-2) elements by grouping
-            for (int i = 0; i < m; i++)
-            {
-                for (int j = i + 1; j < m; j++)
-                {
-                    // union of two sorted arrays of length prevK, they differ only in last positions generally
-                    // For safety, we'll create merged array and sort (cost is small compared to overall checks)
-                    int[] merged = new int[nextK];
-                    // copy elements from first
-                    Array.Copy(list[i], 0, merged, 0, prevK);
-                    // copy last element from second's tail (or just append then sort)
-                    merged[prevK] = list[j][prevK - 1];
-                    Array.Sort(merged);
-                    string kkey = KeyOf(merged);
-                    if (candidateKeys.Add(kkey))
-                        candidates.Add(merged);
-                }
-            }
-        }
-
-        if (candidates.Count == 0) return new List<int[]>();
-
-        var validated = new ConcurrentBag<int[]>();
-
-        Action<int[]> verifyOne = candidate =>
-        {
-            // For candidate of length nextK, ensure every (nextK) subsets of length prevK exist in prevHash
-            bool ok = true;
-            // generate each subset by skipping one element
-            for (int skip = 0; skip < nextK; skip++)
-            {
-                // build subset key quickly
-                // avoid allocations by using a small array
-                int idx = 0;
-                var subset = new int[prevK];
-                for (int t = 0; t < nextK; t++)
-                {
-                    if (t == skip) continue;
-                    subset[idx++] = candidate[t];
-                }
-                string subkey = KeyOf(subset);
-                if (!prevHash.Contains(subkey)) { ok = false; break; }
-            }
-            if (ok) validated.Add(candidate);
-        };
-
-        if (parallelVerify)
-        {
-            Parallel.ForEach(candidates, verifyOne);
-        }
-        else
-        {
-            foreach (var c in candidates) verifyOne(c);
-        }
-
-        return validated.ToList();
+      foreach(var triplet in triplets)
+      {
+        _logger.LogInformation("("+triplet[0]+","+triplet[1]+","+triplet[2]+")");
+      }
     }
-    public Dictionary<int, List<int[]>> FindAllOrdersTrendlinesApriori(List<int[]> triplets, out int maxK, bool parallelVerify = true)
+    private void PrintResults(List<int[]> maxOrders)
     {
-        var levels = new Dictionary<int, List<int[]>>();
-        maxK = 3;
-        if (triplets == null || triplets.Count() == 0) return levels;
-
-        levels[3] = triplets; 
-
-        // build hash for prevOrder membership check
-        var prevOrder = triplets;
-        var prevHash = new HashSet<string>(prevOrder.Select(KeyOf));
-        int k = 3;
-        while (true)
-        {
-            var nextOrder = GenerateNextOrderTrendlines(prevOrder, prevHash, parallelVerify);
-            if (nextOrder == null || nextOrder.Count == 0) break;
-            k++;
-            levels[k] = nextOrder;
-            maxK = k;
-            // prepare for next iteration
-            prevOrder = nextOrder;
-            prevHash = new HashSet<string>(prevOrder.Select(KeyOf));
-        }
-
-        return levels;
+      _logger.LogInformation("results " + EnumMapper.GetAnalysisAlgoType(_cfg.AlgoType));
+      foreach(var order in maxOrders)
+      {
+        string msg = "(";
+        foreach(var i in order) msg += ","+i;
+        msg += ")";
+        _logger.LogInformation(msg);
+      }
     }
-    private static string KeyOf(int[] arr) => string.Join('#', arr);
   }
 }

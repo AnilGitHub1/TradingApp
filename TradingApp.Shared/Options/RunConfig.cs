@@ -69,7 +69,16 @@ namespace TradingApp.Shared.Options
   // Example: Analysis Service
   public class AnalysisServiceConfig : ServiceConfig
   {
-    public string StrategyName { get; set; } = "DefaultStrategy";
+    [XmlIgnore]
+    public AnalysisAlgoType AlgoType {get; set;} = AnalysisAlgoType.HyperClique;
+    [XmlElement("AlgoType")]
+    public string AlgoTypeString
+    {
+      get => EnumMapper.GetAnalysisAlgoType(AlgoType);
+      set => AlgoType = EnumMapper.GetAnalysisAlgoType(value);
+    }
+    public bool PrintTriplets {get; set;}
+    public bool PrintResults {get; set;}
     public double RiskThreshold { get; set; } = 0.05;
   }
 
