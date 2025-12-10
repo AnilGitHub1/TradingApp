@@ -41,7 +41,7 @@ namespace TradingApp.Shared.Services
     public async Task ExecuteAsync(CancellationToken ct)
     {
       _logger.LogInformation("AnalysisService started with config: {@Config}", _cfg.ToString());
-      List<TimeFrame> timeFrames = Utility.GetAllTimeframes();
+      
       var results = new AnalysisResult(new List<Trendline>());
       foreach (var symbol in _symbols)
       {
@@ -57,7 +57,7 @@ namespace TradingApp.Shared.Services
         IEnumerable<Candle> candles = new List<Candle>();            
         IList<HighLow> highLows = new List<HighLow>();
 
-        foreach (var tf in timeFrames)
+        foreach (var tf in _cfg.AnalysisTimeFrames)
         {
           _logger.LogInformation("Analysing symbol: {Symbol} for timeframe: {TimeFrame}", symbol, tf);
           DateTime from = Utility.GetStartTimeOfCandlesForAnalysis(tf);

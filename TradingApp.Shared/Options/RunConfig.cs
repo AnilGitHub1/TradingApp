@@ -1,5 +1,6 @@
 using System.Xml.Serialization;
 using TradingApp.Shared.Constants;
+using TradingApp.Shared.Services;
 
 namespace TradingApp.Shared.Options
 {
@@ -71,11 +72,50 @@ namespace TradingApp.Shared.Options
   {
     [XmlIgnore]
     public AnalysisAlgoType AlgoType {get; set;} = AnalysisAlgoType.HyperClique;
+    [XmlIgnore]
+    public List<TimeFrame> AnalysisTimeFrames = new List<TimeFrame>();
     [XmlElement("AlgoType")]
     public string AlgoTypeString
     {
       get => EnumMapper.GetAnalysisAlgoType(AlgoType);
       set => AlgoType = EnumMapper.GetAnalysisAlgoType(value);
+    }
+    [XmlArray("TimeFrames")]
+    [XmlArrayItem("TimeFrame")]
+    public string[] TimeFrames
+    {
+      get => AnalysisTimeFrames.Select(EnumMapper.GetTimeFrame).ToArray();
+      set
+      {
+        // For Debug Purpose
+        // Console.WriteLine($"TableStrings.setter called; value is {(value == null ? "null" : $"{value.Length} items")}");
+        // if (value != null)
+        // {
+        //   for (int i = 0; i < value.Length; i++)
+        //     Console.WriteLine($"  [{i}]='{value[i]}'");
+        // }
+
+        if (value == null)
+        {
+          AnalysisTimeFrames = new List<TimeFrame>();
+          return;
+        }
+
+        var set = new HashSet<TimeFrame>();
+        foreach (var s in value)
+        {
+          if (string.IsNullOrWhiteSpace(s)) continue;
+          set.Add(EnumMapper.GetTimeFrame(s)); // assume GetTable(string) now strips _data
+        }
+        if(set.Count == 0)
+        {      
+          AnalysisTimeFrames = Utility.GetAllTimeframes();
+        }
+        else
+        {
+          AnalysisTimeFrames = set.ToList();
+        }
+      }
     }
     public bool PrintTriplets {get; set;}
     public bool PrintResults {get; set;}
@@ -94,6 +134,7 @@ namespace TradingApp.Shared.Options
       get => TablesToClean.Select(EnumMapper.GetTable).ToArray();
       set
       {
+        // For Debug Purpose
         // Console.WriteLine($"TableStrings.setter called; value is {(value == null ? "null" : $"{value.Length} items")}");
         // if (value != null)
         // {
@@ -131,6 +172,7 @@ namespace TradingApp.Shared.Options
       get => TablesToInit.Select(EnumMapper.GetTable).ToArray();
       set
       {
+        // For Debug Purpose
         // Console.WriteLine($"TableStrings.setter called; value is {(value == null ? "null" : $"{value.Length} items")}");
         // if (value != null)
         // {

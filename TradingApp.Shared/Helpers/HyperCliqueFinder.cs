@@ -45,7 +45,15 @@ namespace TradingApp.Shared.Services
         {
           foreach (var maximalSet in maximalSets)
           {
-            if(currentSet.IsSubsetOf(maximalSet)) return true;
+            if(currentSet.IsSubsetOf(maximalSet)) {
+              // for debugging purpose
+              // Console.WriteLine("is subset of max:----");
+              // foreach(var i in currentSet)
+              // {
+              //   Console.Write(""+i+",");
+              // }
+              return true;
+            }
           }
           return false;
         }
@@ -61,7 +69,7 @@ namespace TradingApp.Shared.Services
           int k = current.Length;
 
           // Build all pair sets
-          List<HashSet<int>> pairSets = new List<HashSet<int>>(k * (k - 1) / 2);
+          HashSet<int>? candExtend = null;
           for (int i = 0; i < k; i++)
           {
             for (int j = i + 1; j < k; j++)
@@ -72,36 +80,22 @@ namespace TradingApp.Shared.Services
               if (!pairMap.TryGetValue((a, b), out var s))
                 goto CannotExtend;
 
-              pairSets.Add(s);
-            }
-          }
-
-          int ps = pairSets.Count;
-          if (ps == 0)
-            goto CannotExtend;
-
-          // sort pairSets by 
-          pairSets.Sort((a, b) => a.Count - b.Count);
-
-          var smallest = pairSets[0];
-
-          bool extended = false;
-
-          // Loop over smallest set
-          foreach (int cand in smallest)
-          {
-            // Check if cand belongs to each of the other pairSets
-            bool ok = true;
-            for (int t = 1; t < ps; t++)
-            {
-              if (!pairSets[t].Contains(cand))
+              if(candExtend == null)
               {
-                ok = false;
-                break;
+                candExtend = new HashSet<int>(s);
+              }
+              else
+              {
+                candExtend.IntersectWith(s);
+                if(candExtend.Count == 0) goto CannotExtend;
               }
             }
-            if (!ok) continue;
-
+          }
+          if(candExtend == null) goto CannotExtend;
+          bool extended = false;
+          // Loop over smallest set
+          foreach (int cand in candExtend)
+          {
             extended = true;
 
             // Build new clique
@@ -116,10 +110,12 @@ namespace TradingApp.Shared.Services
 
           if (!extended)
           {
-            string key = KeyOf(current);
+            var finalArr = (int[])current.Clone();
+            Array.Sort(finalArr); 
+            string key = KeyOf(finalArr);
             if (visitedMaximal.TryAdd(key, true))
             {
-              maximal.TryAdd(key, (int[])current.Clone());
+              maximal.TryAdd(key, finalArr);
               maximalSets.Add(currentSet);
             }
           }
@@ -138,7 +134,7 @@ namespace TradingApp.Shared.Services
         }
 
         // ---- Run DFS for each base triplet in parallel ----
-        foreach(var t in baseTriplets)
+        Parallel.ForEach( baseTriplets, t=>
         {
           int[] arr = new int[3];
           arr[0] = t[0];
@@ -146,7 +142,7 @@ namespace TradingApp.Shared.Services
           arr[2] = t[2];
 
           DfsExtend(arr);
-        };
+        });
 
         // ---- Build output ----
         if (maximal.Count == 0)
