@@ -2,11 +2,11 @@ using System.Collections.Concurrent;
 
 namespace TradingApp.Shared.Helpers
 {
-  public class Apriori
+  public static class Apriori
   {
     // Given prevOrder (sorted int[] lists) and prevHash (keys), produce next-level sets (k = prevK+1)
     // parallelVerify: if true, candidate verification runs in parallel
-    private List<int[]> GenerateNextOrderTrendlines(List<int[]> prevOrder, HashSet<string> prevHash, bool parallelVerify)
+    private static List<int[]> GenerateNextOrderTrendlines(List<int[]> prevOrder, HashSet<string> prevHash, bool parallelVerify)
     {
         int prevK = prevOrder.Count > 0 ? prevOrder[0].Length : 0;
         if (prevK < 1) return new List<int[]>();
@@ -86,7 +86,7 @@ namespace TradingApp.Shared.Helpers
 
         return validated.ToList();
     }
-    public Dictionary<int, List<int[]>> FindAllOrdersTrendlinesApriori(List<int[]> triplets, out int maxK, bool parallelVerify = true)
+    public static Dictionary<int, List<int[]>> FindAllOrdersTrendlinesApriori(List<int[]> triplets, out int maxK, bool parallelVerify = true)
     {
         var levels = new Dictionary<int, List<int[]>>();
         maxK = 3;

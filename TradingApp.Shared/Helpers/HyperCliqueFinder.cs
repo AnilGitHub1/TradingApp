@@ -2,12 +2,12 @@ using System.Collections.Concurrent;
 
 namespace TradingApp.Shared.Services
 {
-  public class HyperCliqueFinder
+  public static class HyperCliqueFinder
   {
       /// <summary>
       /// Find all maximal hypercliques from triplets.
       /// </summary>
-      public Dictionary<int, List<int[]>> FindAllLevelsFromTriplets(
+      public static Dictionary<int, List<int[]>> FindAllLevelsFromTriplets(
           List<int[]> triplets,
           out int maxK,
           bool returnMaxOnly = false)
