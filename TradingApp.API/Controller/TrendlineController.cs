@@ -39,21 +39,27 @@ namespace TradingApp.API.Controller
         }
 
         [HttpGet("byToken")]
-        public async Task<ActionResult<IList<Trendline>>> GetTrendlineByToken([FromQuery] int token, int limit)
+        public async Task<ActionResult<IList<Trendline>>> GetTrendlineByToken([FromQuery] int token, string tf)
         {
             IList<Trendline> data;
-            if (limit > 0)
-                data = await _TrendlineRepository.GetTrendlineAsync(token, limit);
-            else
-                data = await _TrendlineRepository.GetAllTrendlineAsync(token);
+            data = await _TrendlineRepository.GetAllTrendlineAsync(token);
 
             if (data == null)
-                return NotFound("No daily time frame  found.");
+                return NotFound("No trendlines found.");
 
-            var response = data.Select(d => new
+            var response = data.Where(x =>x.tf.Contains(tf) && x.hl == "h" && x.connects > 0).Select(d => new
             {
                 d.id,
                 d.token,
+                d.hl,
+                d.tf,
+                d.connects,
+                d.starttime,
+                d.endtime,
+                d.index1,
+                d.index2,
+                d.slope,
+                d.intercept
             }).ToList();
 
             return Ok(response);

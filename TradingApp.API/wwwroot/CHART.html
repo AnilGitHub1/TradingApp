@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TradingApp Chart (v5)</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: end;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    input, select, button {
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #e2e8f0;
+    }
+    button {
+      cursor: pointer;
+      background: #2563eb;
+      border-color: #1d4ed8;
+    }
+    #chart {
+      height: 560px;
+      border: 1px solid #334155;
+      border-radius: 8px;
+    }
+    .status {
+      margin-top: 10px;
+      color: #93c5fd;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>Stock Candlestick + Trendlines (v5)</h2>
+
+    <div class="controls">
+      <div class="field">
+        <label>Token</label>
+        <input id="token" type="number" value="474" />
+      </div>
+
+      <div class="field">
+        <label>Timeframe</label>
+        <select id="timeframe">
+          <option value="DailyTF">Daily</option>
+          <option value="FifteenTF">15 Minutes</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Candle Limit (0 = all)</label>
+        <input id="limit" type="number" value="300" min="0" />
+      </div>
+
+      <button id="loadBtn">Load Chart</button>
+    </div>
+
+    <div id="chart"></div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <!-- Lightweight Charts v5 -->
+  <script src="https://unpkg.com/lightweight-charts@5/dist/lightweight-charts.standalone.production.js"></script>
+	<script>
+	  function mapTimeframeToTF(timeframe) {
+		switch (timeframe) {
+		  case "DailyTF":
+			return "1D";
+		  case "FifteenTF":
+			return "15m";
+		  default:
+			return "1D";
+		}
+	  }
+	</script>
+  <script>
+    const API_BASE = "http://localhost:5264";
+
+    const statusEl = document.getElementById("status");
+    const chartContainer = document.getElementById("chart");
+    let chart;
+
+    const setStatus = msg => statusEl.textContent = msg;
+
+    const toEpochSeconds = d =>
+      Math.floor(new Date(d).getTime() / 1000);
+
+    function createChart() {
+      chartContainer.innerHTML = "";
+
+      chart = LightweightCharts.createChart(chartContainer, {
+        layout: {
+          background: { color: "#0f172a" },
+          textColor: "#cbd5e1"
+        },
+        grid: {
+          vertLines: { color: "#1e293b" },
+          horzLines: { color: "#1e293b" }
+        },
+        rightPriceScale: { borderColor: "#334155" },
+        timeScale: {
+          borderColor: "#334155",
+          timeVisible: true
+        },
+        width: chartContainer.clientWidth,
+        height: 560
+      });
+
+      window.addEventListener("resize", () => {
+        chart.applyOptions({ width: chartContainer.clientWidth });
+      });
+    }
+	
+    async function loadChart() {
+      const token = document.getElementById("token").value;
+      const timeframe = document.getElementById("timeframe").value;
+	  const tf = mapTimeframeToTF(timeframe);
+      const limit = document.getElementById("limit").value || 0;
+
+      if (!token) {
+        setStatus("Token required");
+        return;
+      }
+
+      setStatus("Loading data...");
+      createChart();
+
+      try {
+        const candleResp = await fetch(
+          `${API_BASE}/api/${timeframe}/byToken?token=${token}&limit=${limit}`
+        );
+        const trendResp = await fetch(
+          `${API_BASE}/api/Trendline/byToken?token=${token}&tf=${tf}`
+        );
+
+        if (!candleResp.ok) throw new Error("Candles fetch failed");
+        if (!trendResp.ok) throw new Error("Trendlines fetch failed");
+
+        const candlesRaw = await candleResp.json();
+        const trendlines = await trendResp.json();
+
+        const candles = candlesRaw
+          .map(c => ({
+            time: toEpochSeconds(c.time),
+            open: c.open,
+            high: c.high,
+            low: c.low,
+            close: c.close
+          }))
+          .sort((a, b) => a.time - b.time);
+
+        if (!candles.length) {
+          setStatus("No candle data");
+          return;
+        }
+
+        /* ✅ Candlestick series (v5) */
+        const candleSeries = chart.addSeries(
+          LightweightCharts.CandlestickSeries,
+          {
+            upColor: "#22c55e",
+            downColor: "#ef4444",
+            borderVisible: false,
+            wickUpColor: "#22c55e",
+            wickDownColor: "#ef4444"
+          }
+        );
+
+        candleSeries.setData(candles);
+
+        /* ✅ Trendlines (v5) */
+        /* ✅ Trendlines (index-based, CORRECT) */
+		for (const line of trendlines) {
+
+		  const i1 = line.index1;
+		  const i2 = line.index2;
+
+		  // Safety checks
+		  if (
+			i1 == null || i2 == null ||
+			i1 < 0 || i2 < 0 ||
+			i1 >= candles.length || i2 >= candles.length
+		  ) continue;
+
+		  // Map index → candle time
+		  const t1 = candles[i1].time;
+		  const t2 = candles[i2].time;
+
+		  // ✅ CORRECT math: y = m*x + c (x = index)
+		  const y1 = line.slope * i1 + line.intercept;
+		  const y2 = line.slope * i2 + line.intercept;
+
+		  const lineSeries = chart.addSeries(
+			LightweightCharts.LineSeries,
+			{
+			  color: line.hl === "h" ? "#f59e0b" : "#38bdf8",
+			  lineWidth: 2,
+			  lastValueVisible: false,
+			  priceLineVisible: false
+			}
+		  );
+
+		  lineSeries.setData([
+			{ time: t1, value: y1 },
+			{ time: t2, value: y2 }
+		  ]);
+		}
+
+        chart.timeScale().fitContent();
+        setStatus(`Loaded ${candles.length} candles, ${trendlines.length} trendlines`);
+      }
+      catch (err) {
+        console.error(err);
+        setStatus("Error: " + err.message);
+      }
+    }
+
+    document.getElementById("loadBtn").addEventListener("click", loadChart);
+    loadChart();
+  </script>
+</body>
+</html>
