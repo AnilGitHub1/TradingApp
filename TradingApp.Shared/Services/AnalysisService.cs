@@ -146,7 +146,7 @@ namespace TradingApp.Shared.Services
       foreach (var order in maxorders)
       {
 
-        Trendline trendline = TrendlineSolver.CreateModelAndSolve(candles, order);
+        Trendline trendline = TrendlineSolver.CreateModelAndSolve(candles, highLows, order);
         if (trendline.slope == 0.0 && trendline.intercept == 0.0)
           continue;
         else

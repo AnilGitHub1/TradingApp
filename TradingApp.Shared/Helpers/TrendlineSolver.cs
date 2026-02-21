@@ -7,7 +7,7 @@ namespace TradingApp.Shared.Helpers
 {
   public static class TrendlineSolver
   {
-    public static Trendline CreateModelAndSolve(IEnumerable<Candle> candles, IList<int> highs)
+    public static Trendline CreateModelAndSolve(IEnumerable<Candle> candles,IList<int> allhighs, IList<int> highs)
     {
       if (candles.Count() == 0 || highs.Count == 0)
         return Trendline.EmptyTrendline();
@@ -22,16 +22,21 @@ namespace TradingApp.Shared.Helpers
       foreach (var hi in highs)
       {
         // Create variables 
-        var highVar = model.AddVariable("high_" + hi, 0, 1, MipVarType.Binary, 0.0);
-        highVars[hi] = highVar;
+        // var highVar = model.AddVariable("high_" + hi, 0, 1, MipVarType.Binary, 0.0);
+        // highVars[hi] = highVar;
         var highCandle = candles.ElementAt(hi);
         // Constraint:  slope * hi + intercept <= highCandle.high
         var lessThanConstraint = model.AddConstraint($"insideWick_{hi}", ConstraintSense.LessOrEqual, highCandle.high);
         lessThanConstraint.AddTerm(slopeVar.Id, hi);
         lessThanConstraint.AddTerm(interceptVar.Id, 1.0);
+      }
+      foreach(var hi in allhighs)
+      {
+        if(hi < highs[0]) continue;
         // Constraint: slope * hi + intercept >= max(open, close)
+        var highCandle = candles.ElementAt(hi);
         var higherThanConstraint = model.AddConstraint($"aboveBody_{hi}", ConstraintSense.GreaterOrEqual,
-         Math.Max(highCandle.open, highCandle.close));
+        Math.Max(highCandle.open, highCandle.close));
         higherThanConstraint.AddTerm(slopeVar.Id, hi);
         higherThanConstraint.AddTerm(interceptVar.Id, 1.0);
       }
