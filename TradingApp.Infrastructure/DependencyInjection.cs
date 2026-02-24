@@ -21,6 +21,7 @@ namespace TradingApp.Infrastructure
       services.AddScoped<IFifteenTFRepository, FifteenTFRepository>();
       services.AddScoped<IHighLowRepository, HighLowRepository>();
       services.AddScoped<ITrendlineRepository, TrendlineRepository>();
+      services.AddScoped<IUsersRepository, UsersRepository>();
 
       return services;
     }

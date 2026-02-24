@@ -13,5 +13,9 @@ namespace TradingApp.Core.Entities
       this.email = email;
       this.password = password;
     }
+    public static Users EmptyUser()
+    {
+      return new Users("", "","");
+    }
   }
 }

@@ -1,3 +1,5 @@
+using TradingApp.Shared.Services;
+
 namespace TradingApp.Shared.Constants
 {
   public enum AnalysisAlgoType
@@ -116,8 +118,7 @@ namespace TradingApp.Shared.Constants
     }
     public static TimeFrame GetTimeFrame(string tf)
     {
-      tf = tf.ToLower();
-      tf = tf.Replace(" ", "");
+      tf = Utility.TrimStartEndToLowerRemoveSpaces(tf);
       switch (tf)
       {
         case "15m":

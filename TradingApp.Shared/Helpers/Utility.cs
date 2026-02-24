@@ -41,7 +41,7 @@ namespace TradingApp.Shared.Services
         return await _fifteenTF.GetAllFifteenTFAsync(token, from);
       return await _dailyTF.GetAllDailyTFAsync(token, from);
     }
-    public static List<Candle> Resample(TimeFrame timeFrame, IEnumerable<Candle> candles)
+    public static List<Candle> Resample(TimeFrame timeFrame, IEnumerable<Candle> candles, int limit = 0)
     {
       try
       {
@@ -98,6 +98,11 @@ namespace TradingApp.Shared.Services
         if (open != 0)
         {
           resampledCandles.Add(new Candle(token, time, open, high, low, close, volume));
+        }
+
+        if(limit > 0)
+        {
+          candles = candles.TakeLast(limit);
         }
 
         return resampledCandles;
@@ -383,6 +388,14 @@ namespace TradingApp.Shared.Services
       {
         token = -1;
       }
+    }
+    public static string TrimStartEndToLowerRemoveSpaces(string s)
+    {
+      s = s.Replace(" ", "");
+      s = s.TrimEnd();
+      s = s.TrimEnd();
+      s = s.ToLower();
+      return s;
     }
   }
 }

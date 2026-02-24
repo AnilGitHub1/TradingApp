@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using TradingApp.Infrastructure.Data;
 using TradingApp.Core.Interfaces;
 using TradingApp.Core.Entities;
+using TradingApp.Shared.Services;
+using TradingApp.Shared.Constants;
 
 namespace TradingApp.API.Controller
 {
@@ -44,29 +46,26 @@ namespace TradingApp.API.Controller
             return Ok(response);
         }
 
-        [HttpGet("byToken")]
-        public async Task<ActionResult<IEnumerable<Candle>>> GetDailyTFByToken([FromQuery] int token, int limit)
+        [HttpGet("stockdata")]
+        public async Task<ActionResult<IEnumerable<Candle>>> GetDailyTFByToken([FromQuery] int token, string tf, int limit = 0)
         {
             IEnumerable<Candle> data;
-            if (limit > 0)
-                data = await _dailyTFRepository.GetDailyTFAsync(token, limit);
-            else
-                data = await _dailyTFRepository.GetAllDailyTFAsync(token);
+            data = await _dailyTFRepository.GetAllDailyTFAsync(token);
+            data = Utility.Resample(EnumMapper.GetTimeFrame(tf), data, limit);
 
             if (data == null)
-                return NotFound("No daily time frame  found.");
+              return NotFound("No data found.");
 
-            var response = data.Select(d => new
+            var stockData = data.Select(d => new
             {
-                d.id,
-                d.token,
-                d.time,
+                time = new DateTimeOffset(d.time.ToUniversalTime()).ToUnixTimeSeconds(),
                 d.open,
                 d.high,
                 d.low,
                 d.close,
                 d.volume
             }).ToList();
+            var response = new {stockData};
 
             return Ok(response);
         }

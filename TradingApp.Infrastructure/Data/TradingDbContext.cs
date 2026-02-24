@@ -12,6 +12,7 @@ namespace TradingApp.Infrastructure.Data
         public DbSet<FifteenTF> FifteenTF { get; set; }
         public DbSet<HighLow> HighLow { get; set; }
         public DbSet<Trendline> Trendline { get; set; }
+        public DbSet<Users> Users {get; set;}
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<DailyTF>(entity =>
@@ -55,6 +56,12 @@ namespace TradingApp.Infrastructure.Data
                 entity.Property(e => e.endtime)
                     .HasColumnType("timestamp without time zone")
                     .HasConversion(unspecified);
+            });
+            
+            modelBuilder.Entity<Users>(entity =>
+            {
+                entity.ToTable("users");
+                entity.HasKey(e => e.id);
             });
 
             OnModelCreatingPartial(modelBuilder);
