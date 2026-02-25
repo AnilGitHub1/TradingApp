@@ -50,14 +50,14 @@ namespace TradingApp.API.Controller
         [HttpGet("stockdata")]
         public async Task<ActionResult<IEnumerable<Candle>>> GetFifteenTFByToken([FromQuery] int token, int limit, string tf)
         {
-            IEnumerable<Candle> data;
-            data = await _fifteenTFRepository.GetAllFifteenTFAsync(token);
-            data = Utility.Resample(EnumMapper.GetTimeFrame(tf), data, limit);
+            IEnumerable<Candle> candleData;
+            candleData = await _fifteenTFRepository.GetAllFifteenTFAsync(token);
+            candleData = Utility.Resample(EnumMapper.GetTimeFrame(tf), candleData, limit);
 
-            if (data == null)
+            if (candleData == null)
                 return NotFound("No data found.");
 
-            var stockData = data.Select(d => new
+            var stockData = candleData.Select(d => new
             {
                 time = new DateTimeOffset(d.time.ToUniversalTime()).ToUnixTimeSeconds(),
                 d.open,
@@ -66,7 +66,8 @@ namespace TradingApp.API.Controller
                 d.close,
                 d.volume
             }).ToList();
-            var response = new {stockData};
+            var response = new {stockData
+              };
             return Ok(response);
         }
     }

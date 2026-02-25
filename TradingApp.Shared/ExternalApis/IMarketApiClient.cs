@@ -5,6 +5,7 @@ namespace TradingApp.Core.Interfaces
 {
     public interface IMarketApiClient<T> where T : Candle
     {
+      Task<List<DhanScanDto>>  FetchScanDataAsync(DhanScanSettings settings, CancellationToken ct);
       /// <summary>Fetch candles for a single symbol and timeframe, entire data of the stock, returns canonical DTO.</summary>
       Task<FetchResult<T>?> FetchAsync(string symbol, TimeFrame timeFrame, CancellationToken ct);
       /// <summary>Fetch candles for symbols and timeframe, entire data of each stock, returns canonical DTO.</summary>

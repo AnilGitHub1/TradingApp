@@ -397,5 +397,23 @@ namespace TradingApp.Shared.Services
       s = s.ToLower();
       return s;
     }
+    public static Dictionary<string, string> GetTokens(StockCategory category)
+    {
+      switch (category)
+      {
+        case StockCategory.ALL:
+          return AppConstants.AllTokens;
+        case StockCategory.NIFTY_50:
+          return AppConstants.Tokens50;
+        case StockCategory.NIFTY_100:
+          return AppConstants.Tokens100;
+        case StockCategory.NIFTY_200:
+          return AppConstants.Tokens200;
+        case StockCategory.NIFTY_500:
+          return AppConstants.Tokens500;
+        default:
+          return AppConstants.Tokens50;
+      }
+    }
   }
 }

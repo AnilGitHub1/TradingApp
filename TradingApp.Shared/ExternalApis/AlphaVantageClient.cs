@@ -12,7 +12,7 @@ namespace TradingApp.Shared.ExternalApis
   /// <summary>
   /// Example provider implementation. Replace mapping logic with your actual API response format.
   /// </summary>
-  public class AlphaVantageClient<T> : IMarketApiClient<T> where T : Candle
+  public class AlphaVantageClient<T> where T:Candle
   {
     private readonly HttpClient _http;
     private readonly IAppLogger<AlphaVantageClient<T>> _logger;

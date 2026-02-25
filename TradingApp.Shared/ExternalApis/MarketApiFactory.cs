@@ -15,7 +15,6 @@ namespace TradingApp.Shared.ExternalApis
             // providerName should match how you registered clients in Program.cs
             return providerName switch
             {
-                "Alpha" => _sp.GetRequiredService<AlphaVantageClient<T>>(),
                 "Dhan" => _sp.GetRequiredService<DhanClient<T>>(),
                 _ => throw new InvalidOperationException($"Unknown market provider '{providerName}'")
             };

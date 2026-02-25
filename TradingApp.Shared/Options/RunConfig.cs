@@ -18,6 +18,7 @@ namespace TradingApp.Shared.Options
     public AnalysisServiceConfig AnalysisConfig{ get; set; } = new();
     public DatabaseCleanUpServiceConfig CleanUpConfig { get; set; } = new();
     public TableInitializationServiceConfig InitConfig { get; set; } = new();
+    public StockDetailsScanServiceConfig ScanConfig { get; set; } = new();
     public List<string> Symbols { get; set; } = [];
   }
 
@@ -64,6 +65,9 @@ namespace TradingApp.Shared.Options
 
   // Example: Data Processing Service
   public class DataProcessingServiceConfig : ServiceConfig
+  {
+  }
+  public class StockDetailsScanServiceConfig : ServiceConfig
   {
   }
 

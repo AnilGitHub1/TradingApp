@@ -22,6 +22,7 @@ namespace TradingApp.Processor.Workers
         DataProcessingService processService,
         AnalysisService analysisService,
         DatabaseCleanUpService cleanUpService,
+        StockDetailsFetcher StockScanService,
         TableInitializationService tableInitService
         )
     {
@@ -39,6 +40,7 @@ namespace TradingApp.Processor.Workers
       if (analysisService != null && _config.AnalysisConfig.Enabled) _services.Add(analysisService);
       if (cleanUpService != null && _config.CleanUpConfig.Enabled) _services.Add(cleanUpService);
       if (tableInitService != null && _config.InitConfig.Enabled) _services.Add(tableInitService);
+      if (StockScanService != null && _config.ScanConfig.Enabled) _services.Add(StockScanService);
     }
 
     protected override async Task ExecuteAsync(CancellationToken ct)

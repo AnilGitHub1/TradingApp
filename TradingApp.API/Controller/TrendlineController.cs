@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using TradingApp.Infrastructure.Data;
 using TradingApp.Core.Interfaces;
 using TradingApp.Core.Entities;
+using TradingApp.Shared.Constants;
 
 namespace TradingApp.API.Controller
 {
@@ -42,13 +43,14 @@ namespace TradingApp.API.Controller
         public async Task<ActionResult<IList<Trendline>>> GetTrendlineByToken([FromQuery] int token, string tf)
         {
             IList<Trendline> data;
+            tf = EnumMapper.GetTimeFrame(EnumMapper.GetTimeFrame(tf));           
             data = await _TrendlineRepository.GetAllTrendlineAsync(token);
 
             if (data == null)
                 return NotFound("No trendlines found.");
 
-            var response = data.Where(x =>x.tf.Contains(tf) && x.hl == "h" && x.connects > 0).Select(d => new
-            {
+            var trendlineData = data.Where(x =>x.tf.Contains(tf) && x.hl == "h" && x.connects > 0).Select(d => new
+            { 
                 d.id,
                 d.token,
                 d.hl,
@@ -61,8 +63,36 @@ namespace TradingApp.API.Controller
                 d.slope,
                 d.intercept
             }).ToList();
+            List<List<LinePoint>> linesData = new();
+
+            foreach (var d in trendlineData)
+            {
+                linesData.Add(new List<LinePoint>
+                {
+                    new LinePoint
+                    {
+                        time = new DateTimeOffset(d.starttime).ToUnixTimeSeconds(),
+                        Value = d.index1 * d.slope + d.intercept
+                    },
+                    new LinePoint
+                    {
+                        time = new DateTimeOffset(d.endtime).ToUnixTimeSeconds(),
+                        Value = d.index2 * d.slope + d.intercept
+                    }
+                });
+            }
+            var response = new
+            {trendlineData,
+            linesData,
+            };
 
             return Ok(response);
         }
     }
+}
+
+public class LinePoint
+{
+    public long time { get; set; }
+    public double Value { get; set; }
 }

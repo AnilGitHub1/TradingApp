@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using Microsoft.Extensions.Options;
 using TradingApp.Core.Contracts;
 using TradingApp.Core.Entities;
 using TradingApp.Core.Interfaces;
@@ -31,6 +32,27 @@ namespace TradingApp.Shared.ExternalApis
     }
 
     #region Public Fetch Methods
+    public async Task<List<DhanScanDto>>  FetchScanDataAsync(DhanScanSettings settings, CancellationToken ct)
+    {
+      _http.BaseAddress = new Uri(settings.BaseUrl);
+
+        foreach (var header in settings.Headers)
+        {
+          _http.DefaultRequestHeaders.TryAddWithoutValidation(
+            header.Key,
+            header.Value);
+        }
+        var response = await _http.PostAsJsonAsync(
+          settings.Endpoint,
+          settings.Payload,
+          ct);
+
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<DhanScanResponse>();
+
+        return result.Data;
+    }
     public async Task<FetchResult<T>?> FetchAsync(string symbol, TimeFrame timeFrame, CancellationToken ct)
       => await FetchInternalAsync([symbol], timeFrame, timeFrame == TimeFrame.Day? DefaultStartDailyTF : DefaultStartFifteenTF, ct);
 
@@ -185,6 +207,12 @@ namespace TradingApp.Shared.ExternalApis
       public bool Success { get; set; }
       public CandleData Data { get; set; } = new();
     }
+    public class DhanScanResponse
+    {
+        public int Code { get; set; }
+        public List<DhanScanDto> Data { get; set; }
+    }
+
     #endregion
   }
 }

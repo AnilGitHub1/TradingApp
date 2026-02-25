@@ -43,6 +43,8 @@ var host = Host.CreateDefaultBuilder(args)
   .ConfigureServices((ctx, services) =>
   {
     var config = ctx.Configuration;
+    services.Configure<DhanScanSettings>(
+    config.GetSection("DhanScan"));
     Console.WriteLine($"Environment: {ctx.HostingEnvironment.EnvironmentName}");
 
     RunConfig runConfig = LoadRunConfig(config["PathConfig:InputConfigPath"] ?? "");
@@ -142,6 +144,7 @@ static void AddScopes(IServiceCollection services)
   services.AddScoped<AnalysisService>();
   services.AddScoped<DatabaseCleanUpService>();
   services.AddScoped<TableInitializationService>();
+  services.AddScoped<StockDetailsFetcher>();
 }
 
 public class DhanConfig

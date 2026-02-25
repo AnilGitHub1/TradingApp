@@ -50,6 +50,21 @@ namespace TradingApp.Shared.Constants
 
   public enum CandleCompareResult { Lower, Equal, Higher }
   
+  public enum StockCategory
+  {
+    ALL,
+    NIFTY_50,
+    NIFTY_100,
+    NIFTY_200,
+    NIFTY_500,
+  }
+
+  public enum StockSort
+  {
+    Alphabetic,
+    Mcap,
+    Trendline
+  }
   public static class EnumMapper
   {
     public static string GetAnalysisAlgoType(AnalysisAlgoType type)
@@ -119,6 +134,7 @@ namespace TradingApp.Shared.Constants
     public static TimeFrame GetTimeFrame(string tf)
     {
       tf = Utility.TrimStartEndToLowerRemoveSpaces(tf);
+      tf = tf.Replace("_","");
       switch (tf)
       {
         case "15m":
@@ -262,5 +278,92 @@ namespace TradingApp.Shared.Constants
           return "Latest";
       }
     }
+    public static string GetStockCategory(StockCategory category)
+    {
+      switch (category)
+      {
+        case StockCategory.ALL:
+        return "all";
+        case StockCategory.NIFTY_50:
+        return "nifty_50";
+        case StockCategory.NIFTY_100:
+        return "nifty_100";
+        case StockCategory.NIFTY_200:
+        return "nifty_200";
+        case StockCategory.NIFTY_500:
+        return "nifty_500";
+        default:
+        return "nifty_50";
+
+      }
+    }
+    public static StockCategory GetStockCategory(string category)
+    {
+      category = Utility.TrimStartEndToLowerRemoveSpaces(category);
+      switch (category)
+      {
+        case "all":
+          return StockCategory.ALL;
+        case "nifty":
+        case "nifty_50":
+        case "50":
+        case "n50":
+          return StockCategory.NIFTY_50;
+        case "nifty_100":
+        case "100":
+        case "n100":
+          return StockCategory.NIFTY_100;
+        case "nifty_200":
+        case "200":
+        case "n200":
+          return StockCategory.NIFTY_200;
+        case "nifty_500":
+        case "500":
+        case "n500":
+          return StockCategory.NIFTY_500;
+        default:
+          return StockCategory.NIFTY_50;
+        
+      }
+    }
+    public static string GetStockSortOrder(StockSort sort)
+    {
+      switch (sort)
+      {
+        case StockSort.Alphabetic:
+        return "alpha";
+        case StockSort.Mcap:
+        return "mcap";
+        case StockSort.Trendline:
+        return "trendline";
+        default:
+        return "trendline";
+
+      }
+    }
+    public static StockSort GetStockSortOrder(string sort)
+    {
+      sort = Utility.TrimStartEndToLowerRemoveSpaces(sort);
+      switch (sort)
+      {
+        case "alpha":
+        case "alphabetic":
+        case "a":
+          return StockSort.Alphabetic;
+        case "1":
+        case "mcap":
+        case "cap":
+        case "marketcap":
+          return StockSort.Mcap;
+        case "trend":
+        case "trendline":
+        case "touches":
+        case "connects":
+          return StockSort.Trendline;
+        default:
+          return StockSort.Trendline;        
+      }
+    }
+  
   }  
 }
