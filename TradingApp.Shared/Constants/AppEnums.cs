@@ -65,6 +65,15 @@ namespace TradingApp.Shared.Constants
     Mcap,
     Trendline
   }
+  
+  public enum BookmarkColor
+  {
+    Blue,
+    Black,
+    Red,
+    Green,
+    Yellow
+  }
   public static class EnumMapper
   {
     public static string GetAnalysisAlgoType(AnalysisAlgoType type)
@@ -364,6 +373,42 @@ namespace TradingApp.Shared.Constants
           return StockSort.Trendline;        
       }
     }
-  
+    public static BookmarkColor GetBookmarkColor(string color)
+    {
+      color = Utility.TrimStartEndToLowerRemoveSpaces(color);
+      switch (color)
+      {
+        case "blue":
+          return BookmarkColor.Blue;
+        case "black":
+          return BookmarkColor.Black;
+        case "red":
+          return BookmarkColor.Red;
+        case "green":
+           return BookmarkColor.Green;
+        case "yellow":
+          return BookmarkColor.Yellow;
+        default:
+          return BookmarkColor.Red;
+      }
+    }
+    public static string GetBookmarkColor(BookmarkColor color)
+    {
+      switch (color)
+      {
+        case BookmarkColor.Blue:
+          return "blue";
+        case BookmarkColor.Black:
+          return "black";
+        case BookmarkColor.Red:
+          return "red";
+        case BookmarkColor.Green:
+          return "green";
+        case BookmarkColor.Yellow:
+          return "yellow";
+        default:
+          return "red";
+      }
+    }
   }  
 }

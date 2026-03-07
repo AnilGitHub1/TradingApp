@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\TradingApp.Shared\TradingApp.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

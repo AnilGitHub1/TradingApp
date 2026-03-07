@@ -14,6 +14,9 @@ namespace TradingApp.Infrastructure.Data
         public DbSet<Trendline> Trendline { get; set; }
         public DbSet<Users> Users {get; set;}
         public DbSet<TrendlineScore> TrendlineScore {get; set;}
+        public DbSet<UserTrendline> UserTrendlines { get; set; }
+        public DbSet<UserBookmark> UserBookmarks { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<DailyTF>(entity =>
@@ -73,6 +76,43 @@ namespace TradingApp.Infrastructure.Data
             {
                 entity.ToTable("users");
                 entity.HasKey(e => e.id);
+            });
+            // USER TRENDLINES
+            modelBuilder.Entity<UserTrendline>(entity =>
+            {
+                entity.ToTable("user_trendlines");
+                entity.HasKey(e => e.Id);
+
+                entity.HasIndex(t => new { t.UserId, t.Token, t.Tf })
+                      .HasDatabaseName("idx_user_trendlines_lookup");
+            });
+
+
+            // USER BOOKMARKS
+            modelBuilder.Entity<UserBookmark>(entity =>
+            {
+                entity.ToTable("user_bookmarks");
+                entity.HasKey(e => e.Id);
+
+                entity.HasIndex(b => new { b.UserId, b.Token })
+                      .IsUnique()
+                      .HasDatabaseName("uniq_user_token");
+            });
+
+
+            // REFRESH TOKENS
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.ToTable("refresh_tokens");
+                entity.HasKey(e => e.Id);
+
+                entity.HasIndex(r => r.Token)
+                      .IsUnique()
+                      .HasDatabaseName("idx_refresh_token");
+
+                entity.HasIndex(r => r.UserId)
+                      .IsUnique()
+                      .HasDatabaseName("idx_refresh_user");
             });
 
             OnModelCreatingPartial(modelBuilder);
