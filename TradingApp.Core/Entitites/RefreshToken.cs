@@ -20,6 +20,6 @@ namespace TradingApp.Core.Entities
 
       public string ReplacedByToken { get; set; } = "";
 
-      public Users User { get; set; }
+      public Users? User { get; set; }
   }
 }

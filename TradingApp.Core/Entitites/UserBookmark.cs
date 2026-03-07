@@ -1,4 +1,5 @@
-using TradingApp.Shared.Constants.
+using TradingApp.Shared.Constants;
+
 namespace TradingApp.Core.Entities
 {
   public class UserBookmark
@@ -13,6 +14,6 @@ namespace TradingApp.Core.Entities
 
       public DateTime CreatedAt { get; set; }
 
-      public Users User { get; set; }
+      public Users? User { get; set; }
   }
 }

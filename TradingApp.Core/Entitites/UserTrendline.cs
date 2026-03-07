@@ -8,7 +8,7 @@ namespace TradingApp.Core.Entities
 
       public int Token { get; set; }
 
-      public string Tf { get; set; }
+      public string Tf { get; set; } = "";
 
       public decimal StartValue { get; set; }
 
@@ -30,6 +30,6 @@ namespace TradingApp.Core.Entities
 
       public DateTime UpdatedAt { get; set; }
 
-      public Users User { get; set; }
+      public Users? User { get; set; }
   }
 }
