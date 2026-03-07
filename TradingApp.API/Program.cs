@@ -31,6 +31,9 @@ builder.Services.AddScoped<IFifteenTFRepository, FifteenTFRepository>();
 builder.Services.AddScoped<IHighLowRepository, HighLowRepository>();
 builder.Services.AddScoped<ITrendlineRepository, TrendlineRepository>();
 builder.Services.AddScoped<IUsersRepository, UsersRepository>();
+builder.Services.AddScoped<IUserTrendlineRepository, UserTrendlineRepository>();
+builder.Services.AddScoped<IUserBookmarkRepository, UserBookmarkRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -80,11 +83,9 @@ app.UseHttpsRedirection();
 // ENABLE CORS (MUST be before MapControllers)
 app.UseCors("AllowFrontend");
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-app.UseAuthentication();
-app.UseAuthorization();
 
 app.Run();
