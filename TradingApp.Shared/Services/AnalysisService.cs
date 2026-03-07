@@ -13,6 +13,17 @@ namespace TradingApp.Shared.Services
 
   public class AnalysisService : IService
   {
+    private readonly string initTrendlines = @"UPDATE trendline_data
+        SET
+          slope = 0, 
+          intercept = 0, 
+          starttime = NOW(), 
+          endtime = NOW(), 
+          index1 = 0, 
+          index2 = 0, 
+          index = 0, 
+          connects = 0, 
+          totalconnects = 0;";
     private readonly IDailyTFRepository _dailyTF;
     private readonly IFifteenTFRepository _fifteenTF;
     private readonly AnalysisServiceConfig _cfg;
@@ -39,6 +50,7 @@ namespace TradingApp.Shared.Services
       _logger.LogInformation("AnalysisService started with config: {@Config}", _cfg.ToString());
       
       var results = new AnalysisResult(new List<Trendline>());
+      await _trendlineRepo.ExecuteSQL(initTrendlines);
       foreach (var symbol in _symbols)
       {
         Utility.GetToken(symbol, out int token);

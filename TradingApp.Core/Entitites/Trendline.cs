@@ -21,6 +21,7 @@ namespace TradingApp.Core.Entities
     public int index2 { get; set; }
     public int connects { get; set; }
     public int totalconnects { get; set; }
+    public TrendlineScore? Score { get; set; }
     public Trendline(int token, DateTime starttime, DateTime endtime, double slope, double intercept,
      string hl, string tf, int index, int index1, int index2, int connects, int totalconnects)
     {

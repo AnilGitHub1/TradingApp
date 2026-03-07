@@ -87,56 +87,79 @@ namespace TradingApp.Infrastructure.Repositories
     }   
 
     public async Task UpdateTrendlinesAsync(List<Trendline> newList)
-{
-    foreach (var incoming in newList)
     {
-        // Find the single row that matches this token-tf-hl
-        var existing = await Context.Trendline
-            .FirstOrDefaultAsync(t =>
-                t.token == incoming.token &&
-                t.tf == incoming.tf &&
-                t.hl == incoming.hl);
-
-        if (existing == null)
+        foreach (var incoming in newList)
         {
-            // This should never happen because you pre-created rows.
-            // But if missing, create it safely.
-            await Context.Trendline.AddAsync(incoming);
-            continue;
+            var existing = await Context.Trendline
+                .Include(t => t.Score)
+                .FirstOrDefaultAsync(t =>
+                    t.token == incoming.token &&
+                    t.tf == incoming.tf &&
+                    t.hl == incoming.hl);
+
+            if (existing == null)
+            {
+                await Context.Trendline.AddAsync(incoming);
+                continue;
+            }
+
+            bool changed =
+                existing.starttime != incoming.starttime ||
+                existing.endtime != incoming.endtime ||
+                existing.slope != incoming.slope ||
+                existing.intercept != incoming.intercept ||
+                existing.index != incoming.index ||
+                existing.index1 != incoming.index1 ||
+                existing.index2 != incoming.index2 ||
+                existing.connects != incoming.connects ||
+                existing.totalconnects != incoming.totalconnects;
+
+            if (changed)
+            {
+                existing.starttime = incoming.starttime;
+                existing.endtime = incoming.endtime;
+                existing.slope = incoming.slope;
+                existing.intercept = incoming.intercept;
+                existing.index = incoming.index;
+                existing.index1 = incoming.index1;
+                existing.index2 = incoming.index2;
+                existing.connects = incoming.connects;
+                existing.totalconnects = incoming.totalconnects;
+
+                if (incoming.Score != null)
+                {
+                    if (existing.Score == null)
+                    {
+                        existing.Score = new TrendlineScore
+                        {
+                            Id = existing.id,
+                            TouchScore = incoming.Score.TouchScore,
+                            RecencyScore = incoming.Score.RecencyScore,
+                            DistanceScore = incoming.Score.DistanceScore,
+                            SpreadScore = incoming.Score.SpreadScore,
+                            SlopeScore = incoming.Score.SlopeScore,
+                            FinalScore = incoming.Score.FinalScore,
+                            ScoreVersion = incoming.Score.ScoreVersion,
+                            CalculatedAt = incoming.Score.CalculatedAt
+                        };
+                    }
+                    else
+                    {
+                        existing.Score.TouchScore = incoming.Score.TouchScore;
+                        existing.Score.RecencyScore = incoming.Score.RecencyScore;
+                        existing.Score.DistanceScore = incoming.Score.DistanceScore;
+                        existing.Score.SpreadScore = incoming.Score.SpreadScore;
+                        existing.Score.SlopeScore = incoming.Score.SlopeScore;
+                        existing.Score.FinalScore = incoming.Score.FinalScore;
+                        existing.Score.ScoreVersion = incoming.Score.ScoreVersion;
+                        existing.Score.CalculatedAt = incoming.Score.CalculatedAt;
+                    }
+                }
+            }
         }
 
-        // Check if any of the values actually changed
-        bool changed =
-            existing.starttime != incoming.starttime ||
-            existing.endtime != incoming.endtime ||
-            existing.slope != incoming.slope ||
-            existing.intercept != incoming.intercept ||
-            existing.index != incoming.index ||
-            existing.index1 != incoming.index1 ||
-            existing.index2 != incoming.index2 ||
-            existing.connects != incoming.connects ||
-            existing.totalconnects != incoming.totalconnects;
-
-        if (changed)
-        {
-            // Update only the changed properties
-            existing.starttime = incoming.starttime;
-            existing.endtime = incoming.endtime;
-            existing.slope = incoming.slope;
-            existing.intercept = incoming.intercept;
-
-            existing.index = incoming.index;
-            existing.index1 = incoming.index1;
-            existing.index2 = incoming.index2;
-            existing.connects = incoming.connects;
-            existing.totalconnects = incoming.totalconnects;
-        }
+        await Context.SaveChangesAsync();
     }
-
-    await Context.SaveChangesAsync();
-}
-    
-
     public async Task DeleteTrendlineAsync(int id)
     {
       await Context.Trendline
@@ -169,6 +192,10 @@ namespace TradingApp.Infrastructure.Repositories
         .Where(x => x.token == token)
         .OrderByDescending(x => x.starttime)
         .FirstOrDefaultAsync();
+    }
+    public async Task ExecuteSQL(string command)
+    {
+      await Context.Database.ExecuteSqlRawAsync(command);
     }        
   }
 }

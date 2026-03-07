@@ -13,6 +13,7 @@ namespace TradingApp.Infrastructure.Data
         public DbSet<HighLow> HighLow { get; set; }
         public DbSet<Trendline> Trendline { get; set; }
         public DbSet<Users> Users {get; set;}
+        public DbSet<TrendlineScore> TrendlineScore {get; set;}
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<DailyTF>(entity =>
@@ -38,6 +39,11 @@ namespace TradingApp.Infrastructure.Data
                 entity.Property(e => e.time)
                   .HasColumnType("timestamp without time zone");
             });
+            modelBuilder.Entity<TrendlineScore>(entity =>
+            {
+                entity.ToTable("trendlinescore_data");
+                entity.HasKey(e => e.Id);
+            });
 
             modelBuilder.Entity<Trendline>(entity =>
             {
@@ -56,6 +62,11 @@ namespace TradingApp.Infrastructure.Data
                 entity.Property(e => e.endtime)
                     .HasColumnType("timestamp without time zone")
                     .HasConversion(unspecified);
+                
+                entity.HasOne(t => t.Score)
+                .WithOne(s => s.Trendline)
+                .HasForeignKey<TrendlineScore>(s => s.Id)
+                .OnDelete(DeleteBehavior.Cascade);
             });
             
             modelBuilder.Entity<Users>(entity =>

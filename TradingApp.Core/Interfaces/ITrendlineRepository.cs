@@ -17,5 +17,6 @@ namespace TradingApp.Core.Interfaces
         Task DeleteTrendlineAsync(int id);
         Task DeleteTrendlineAsync(Trendline entity);
         Task<int> DeleteTrendlineDataAsync(int token);
+        Task ExecuteSQL(string command);
     }
 }
