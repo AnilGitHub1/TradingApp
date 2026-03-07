@@ -12,7 +12,7 @@ namespace TradingApp.Infrastructure
     bool addGenericCandleRepository = false)
     {
       services.AddDbContext<TradingDbContext>(options =>
-          options.UseNpgsql(connectionString));
+          options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention());
       if (addGenericCandleRepository)
       {
         services.AddScoped(typeof(ICandleRepository<>), typeof(CandleRepository<>));
