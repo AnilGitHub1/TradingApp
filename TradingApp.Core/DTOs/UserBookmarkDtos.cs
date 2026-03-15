@@ -1,5 +1,4 @@
-using TradingApp.Shared.Constants;
-
+using TradingApp.Core.Entities;
 namespace TradingApp.Core.DTOs
 {
     public class SaveUserBookmarkDto

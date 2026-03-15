@@ -7,13 +7,7 @@ namespace TradingApp.Core.Entities
       public int UserId { get; set; }
 
       public int Token { get; set; }
-
-<<<<<<< HEAD
-      public string Tf { get; set; }
-=======
       public string Tf { get; set; } = "";
->>>>>>> abcae4471c012cc6817891571c67a4d26bae5c70
-
       public decimal StartValue { get; set; }
 
       public DateTime StartTime { get; set; }
@@ -33,11 +27,6 @@ namespace TradingApp.Core.Entities
       public DateTime CreatedAt { get; set; }
 
       public DateTime UpdatedAt { get; set; }
-
-<<<<<<< HEAD
-      public Users User { get; set; }
-=======
       public Users? User { get; set; }
->>>>>>> abcae4471c012cc6817891571c67a4d26bae5c70
   }
 }

@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-=======
-using TradingApp.Shared.Constants;
-
->>>>>>> abcae4471c012cc6817891571c67a4d26bae5c70
 namespace TradingApp.Core.Entities
 {
   public class UserBookmark
@@ -17,7 +12,6 @@ namespace TradingApp.Core.Entities
 
       public DateTime CreatedAt { get; set; }
 
-<<<<<<< HEAD
       public Users User { get; set; }
       
   }
@@ -31,8 +25,3 @@ namespace TradingApp.Core.Entities
   }
 
 }
-=======
-      public Users? User { get; set; }
-  }
-}
->>>>>>> abcae4471c012cc6817891571c67a4d26bae5c70

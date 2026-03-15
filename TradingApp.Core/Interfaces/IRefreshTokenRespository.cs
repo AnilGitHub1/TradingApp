@@ -1,4 +1,3 @@
-using System.Reflection.Metadata.Ecma335;
 using TradingApp.Core.Entities;
 using YourProject.Interfaces;
 
