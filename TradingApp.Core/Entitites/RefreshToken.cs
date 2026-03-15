@@ -20,6 +20,7 @@ namespace TradingApp.Core.Entities
 
       public string ReplacedByToken { get; set; } = "";
 
+<<<<<<< HEAD
       public Users User { get; set; }
       public bool IsExpired => DateTime.UtcNow >= Expires;
 
@@ -33,5 +34,8 @@ namespace TradingApp.Core.Entities
         if(rt.Token == "") return false;
         return true;
       }
+=======
+      public Users? User { get; set; }
+>>>>>>> abcae4471c012cc6817891571c67a4d26bae5c70
   }
 }

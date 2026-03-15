@@ -22,6 +22,9 @@ namespace TradingApp.Infrastructure
       services.AddScoped<IHighLowRepository, HighLowRepository>();
       services.AddScoped<ITrendlineRepository, TrendlineRepository>();
       services.AddScoped<IUsersRepository, UsersRepository>();
+      services.AddScoped<IUserTrendlineRepository, UserTrendlineRepository>();
+      services.AddScoped<IUserBookmarkRepository, UserBookmarkRepository>();
+      services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
       return services;
     }

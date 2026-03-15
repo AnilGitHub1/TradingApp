@@ -66,6 +66,17 @@ namespace TradingApp.Shared.Constants
     Trendline
   }
   
+<<<<<<< HEAD
+=======
+  public enum BookmarkColor
+  {
+    Blue,
+    Black,
+    Red,
+    Green,
+    Yellow
+  }
+>>>>>>> abcae4471c012cc6817891571c67a4d26bae5c70
   public static class EnumMapper
   {
     public static string GetAnalysisAlgoType(AnalysisAlgoType type)
