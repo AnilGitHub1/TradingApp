@@ -97,6 +97,8 @@ namespace TradingApp.Infrastructure.Data
                 entity.HasIndex(b => new { b.UserId, b.Token })
                       .IsUnique()
                       .HasDatabaseName("uniq_user_token");
+                entity.Property(b => b.Color)
+                .HasConversion<string>();
             });
 
 

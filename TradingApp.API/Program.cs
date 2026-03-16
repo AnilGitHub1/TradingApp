@@ -5,14 +5,18 @@ using TradingApp.Infrastructure.Repositories;
 using TradingApp.Core.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using System.Text.Json.Serialization;
+using Npgsql;
 using System.Text;
+using TradingApp.Core.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.UseUrls("http://0.0.0.0:5264");
 
 // -------------------- SERVICES --------------------
 
 builder.Services.AddDbContext<TradingDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")).UseSnakeCaseNamingConvention());
 
 
 var allowedOrigins = builder.Configuration["AllowedOrigins"]
@@ -29,6 +33,17 @@ builder.Services.AddCors(options =>
     });
 });
 
+
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
+
+builder.Services.AddDbContext<TradingDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"), o =>
+        o.MapEnum<BookmarkColor>("bookmark_color")));
 builder.Services.AddScoped<IDailyTFRepository, DailyTFRepository>();
 builder.Services.AddScoped<IFifteenTFRepository, FifteenTFRepository>();
 builder.Services.AddScoped<IHighLowRepository, HighLowRepository>();

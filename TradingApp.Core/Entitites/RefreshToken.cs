@@ -22,6 +22,7 @@ namespace TradingApp.Core.Entities
       public bool IsExpired => DateTime.UtcNow >= Expires;
 
       public bool IsActive => Revoked == null && !IsExpired;
+      public Users User { get; set; }
       public static RefreshToken EmptyRefreshToken()
       {
         return new RefreshToken();
@@ -31,6 +32,5 @@ namespace TradingApp.Core.Entities
         if(rt.Token == "") return false;
         return true;
       }
-      public Users User { get; set; }
   }
 }

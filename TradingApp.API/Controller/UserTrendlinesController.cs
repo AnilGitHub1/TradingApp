@@ -42,7 +42,7 @@ namespace TradingApp.API.Controllers
                 }
             }
 
-            return Ok(trendlines);
+            return Ok(trendlines.Select(x=> TrendlineResponseDto.ToDto(x)));
         }
 
         [HttpGet("{id:int}")]
@@ -60,7 +60,7 @@ namespace TradingApp.API.Controllers
                 return NotFound(new { message = "Trendline not found." });
             }
 
-            return Ok(trendline);
+            return Ok(TrendlineResponseDto.ToDto(trendline));
         }
 
         [HttpPost]
@@ -83,9 +83,9 @@ namespace TradingApp.API.Controllers
                 Token = request.Token,
                 Tf = request.Tf,
                 StartValue = request.StartValue,
-                StartTime = request.StartTime,
+                StartTime = DateTimeOffset.FromUnixTimeSeconds(request.StartTime).UtcDateTime,
                 EndValue = request.EndValue,
-                EndTime = request.EndTime,
+                EndTime = DateTimeOffset.FromUnixTimeSeconds(request.EndTime).UtcDateTime,
                 Slope = request.Slope,
                 Intercept = request.Intercept,
                 Index1 = request.Index1,
@@ -95,7 +95,7 @@ namespace TradingApp.API.Controllers
             };
 
             await _userTrendlineRepository.AddUserTrendlineAsync(trendline);
-            return CreatedAtAction(nameof(GetTrendlineById), new { id = trendline.Id }, trendline);
+            return CreatedAtAction(nameof(GetTrendlineById), new { id = trendline.Id }, TrendlineResponseDto.ToDto(trendline));
         }
 
         [HttpPut("{id:int}")]
@@ -115,9 +115,9 @@ namespace TradingApp.API.Controllers
 
             if (!string.IsNullOrWhiteSpace(request.Tf)) trendline.Tf = request.Tf;
             if (request.StartValue.HasValue) trendline.StartValue = request.StartValue.Value;
-            if (request.StartTime.HasValue) trendline.StartTime = request.StartTime.Value;
+            if (request.StartTime.HasValue) trendline.StartTime = DateTimeOffset.FromUnixTimeSeconds(request.StartTime.Value).UtcDateTime;
             if (request.EndValue.HasValue) trendline.EndValue = request.EndValue.Value;
-            if (request.EndTime.HasValue) trendline.EndTime = request.EndTime.Value;
+            if (request.EndTime.HasValue) trendline.EndTime = DateTimeOffset.FromUnixTimeSeconds(request.EndTime.Value).UtcDateTime;
             if (request.Slope.HasValue) trendline.Slope = request.Slope.Value;
             if (request.Intercept.HasValue) trendline.Intercept = request.Intercept.Value;
             if (request.Index1.HasValue) trendline.Index1 = request.Index1.Value;
@@ -125,7 +125,7 @@ namespace TradingApp.API.Controllers
             trendline.UpdatedAt = DateTime.UtcNow;
 
             await _userTrendlineRepository.UpdateUserTrendlineAsync(trendline);
-            return Ok(trendline);
+            return Ok(TrendlineResponseDto.ToDto(trendline));
         }
 
         [HttpDelete("{id:int}")]

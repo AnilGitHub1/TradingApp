@@ -20,47 +20,17 @@ namespace TradingApp.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetBookmarks([FromQuery] int? token)
+        public async Task<IActionResult> GetBookmarks()
         {
             var userId = GetCurrentUserId();
             if (userId == null)
             {
                 return Unauthorized(new { message = "Invalid user context." });
-            }
-
-            if (token.HasValue)
-            {
-                var bookmark = await _userBookmarkRepository.GetByUserAndTokenAsync(userId.Value, token.Value);
-                if (bookmark == null)
-                {
-                    return NotFound(new { message = "Bookmark not found." });
-                }
-
-                return Ok(bookmark);
             }
 
             var bookmarks = await _userBookmarkRepository.GetByUserAsync(userId.Value);
             return Ok(bookmarks);
         }
-
-        [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetBookmarkById(int id)
-        {
-            var userId = GetCurrentUserId();
-            if (userId == null)
-            {
-                return Unauthorized(new { message = "Invalid user context." });
-            }
-
-            var bookmark = await _userBookmarkRepository.GetByIdForUserAsync(id, userId.Value);
-            if (bookmark == null)
-            {
-                return NotFound(new { message = "Bookmark not found." });
-            }
-
-            return Ok(bookmark);
-        }
-
         [HttpPost]
         public async Task<IActionResult> SaveBookmark([FromBody] SaveUserBookmarkDto request)
         {
@@ -78,9 +48,13 @@ namespace TradingApp.API.Controllers
             var existing = await _userBookmarkRepository.GetByUserAndTokenAsync(userId.Value, request.Token);
             if (existing != null)
             {
+              if(existing.Color == request.Color)
+                await _userBookmarkRepository.DeleteUserBookmarkAsync(existing);
+              else {
                 existing.Color = request.Color;
                 await _userBookmarkRepository.UpdateUserBookmarkAsync(existing);
-                return Ok(existing);
+              }
+              return Ok(existing);
             }
 
             var bookmark = new UserBookmark
@@ -92,48 +66,8 @@ namespace TradingApp.API.Controllers
             };
 
             await _userBookmarkRepository.AddUserBookmarkAsync(bookmark);
-            return CreatedAtAction(nameof(GetBookmarkById), new { id = bookmark.Id }, bookmark);
-        }
-
-        [HttpPut("{id:int}")]
-        public async Task<IActionResult> EditBookmark(int id, [FromBody] UpdateUserBookmarkDto request)
-        {
-            var userId = GetCurrentUserId();
-            if (userId == null)
-            {
-                return Unauthorized(new { message = "Invalid user context." });
-            }
-
-            var bookmark = await _userBookmarkRepository.GetByIdForUserAsync(id, userId.Value);
-            if (bookmark == null)
-            {
-                return NotFound(new { message = "Bookmark not found." });
-            }
-
-            bookmark.Color = request.Color;
-            await _userBookmarkRepository.UpdateUserBookmarkAsync(bookmark);
             return Ok(bookmark);
         }
-
-        [HttpDelete("{id:int}")]
-        public async Task<IActionResult> DeleteBookmark(int id)
-        {
-            var userId = GetCurrentUserId();
-            if (userId == null)
-            {
-                return Unauthorized(new { message = "Invalid user context." });
-            }
-
-            var bookmark = await _userBookmarkRepository.GetByIdForUserAsync(id, userId.Value);
-            if (bookmark == null)
-            {
-                return NotFound(new { message = "Bookmark not found." });
-            }
-
-            await _userBookmarkRepository.DeleteUserBookmarkAsync(bookmark);
-            return NoContent();
-        }
-
         private int? GetCurrentUserId()
         {
             var claimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
